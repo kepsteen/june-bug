@@ -29,7 +29,8 @@ export function useResizableSidebar() {
     localStorage.setItem('sidebarCollapsed', isCollapsed.toString())
   }, [sidebarWidth, isCollapsed])
 
-  const startResizing = useCallback(() => {
+  const startResizing = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
     setIsResizing(true)
   }, [])
 
@@ -66,6 +67,7 @@ export function useResizableSidebar() {
   return {
     sidebarWidth,
     isCollapsed,
+    isResizing,
     sidebarRef,
     startResizing,
     toggleCollapse,

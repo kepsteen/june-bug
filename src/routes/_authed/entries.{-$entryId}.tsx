@@ -27,6 +27,7 @@ function RouteComponent() {
   const {
     sidebarWidth,
     isCollapsed,
+    isResizing,
     sidebarRef,
     startResizing,
     toggleCollapse,
@@ -115,7 +116,7 @@ function RouteComponent() {
   })
 
   return (
-    <div className="flex h-screen w-full relative">
+    <div className={`flex h-screen w-full relative ${isResizing ? 'select-none' : ''}`}>
       {/* Left Button Group - Show single button when open, group when collapsed */}
       {isCollapsed ? (
         <div className="absolute top-[0.5rem] left-[0.5rem] z-10 flex gap-1 bg-background rounded-md p-1">
@@ -174,7 +175,7 @@ function RouteComponent() {
       {/* Resize Handle */}
       {!isCollapsed && (
         <div
-          className="w-1 bg-background cursor-col-resize transition-opacity duration-500"
+          className="w-1 bg-background cursor-col-resize hover:bg-primary/20 transition-colors"
           onMouseDown={startResizing}
         />
       )}
@@ -184,7 +185,7 @@ function RouteComponent() {
         className={`flex-1 overflow-hidden ${isCollapsed ? 'bg-card' : 'bg-background pt-3'}`}
       >
         <div
-          className={`bg-card h-full relative overflow-y-auto ${isCollapsed ? '' : 'rounded-tl-lg shadow-sm border-l'}`}
+          className={`bg-card h-full relative flex flex-col ${isCollapsed ? '' : 'rounded-tl-lg shadow-sm border-l'}`}
         >
           {/* Top border that stops before the notch */}
           {!isCollapsed && (
@@ -215,7 +216,9 @@ function RouteComponent() {
               </svg>
             </div>
           )}
-          <div className="pt-8">
+
+          {/* Scrollable content area - only this section scrolls */}
+          <div className="flex-1 overflow-y-auto pt-8">
             {isLoading && (
               <div className="flex items-center justify-center p-8">
                 <div className="text-muted-foreground">Loading entry...</div>
