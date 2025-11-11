@@ -3,6 +3,12 @@ import { Button } from '@/components/ui/button'
 import { PanelLeft, Search, Plus } from 'lucide-react'
 import { useResizableSidebar } from '@/hooks/use-resizable-sidebar'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { EntryForm } from '@/components/editor/entry-form'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { useConvexMutation } from '@convex-dev/react-query'
+import { useConvex } from 'convex/react'
+import { api } from '../../../convex/_generated/api'
+import { useEffect } from 'react'
 
 export const Route = createFileRoute('/_authed/entries')({
   component: RouteComponent,
@@ -17,8 +23,35 @@ function RouteComponent() {
     toggleCollapse,
   } = useResizableSidebar()
 
+  const convex = useConvex()
+
+  // Fetch all entries using standard React Query with Convex
+  const { data: entries, isLoading, error } = useQuery({
+    queryKey: ['entries'],
+    queryFn: () => convex.query(api.entries.getEntries, {}),
+  })
+
+  // Create entry mutation
+  const { mutate: createEntry } = useMutation({
+    mutationFn: useConvexMutation(api.entries.createEntry),
+  })
+
+  // Create a temporary entry on mount if none exists
+  useEffect(() => {
+    if (!isLoading && entries && entries.length === 0) {
+      createEntry({}, {
+        onError: (error) => {
+          console.error('Failed to create initial entry:', error)
+        },
+      })
+    }
+  }, [isLoading, entries, createEntry])
+
+  // Get the most recent entry (or null if still loading)
+  const currentEntry = entries && entries.length > 0 ? entries[0] : null
+
   return (
-    <div className="flex min-h-screen w-full relative">
+    <div className="flex h-screen w-full relative">
       {/* Left Button Group - Show single button when open, group when collapsed */}
       {isCollapsed ? (
         <div className="absolute top-[0.5rem] left-[0.5rem] z-10 flex gap-1 bg-background rounded-md p-1">
@@ -81,10 +114,10 @@ function RouteComponent() {
 
       {/* Main Content Area with Background */}
       <main
-        className={`flex-1 ${isCollapsed ? 'bg-card' : 'bg-background pt-3'}`}
+        className={`flex-1 overflow-hidden ${isCollapsed ? 'bg-card' : 'bg-background pt-3'}`}
       >
         <div
-          className={`bg-card h-full relative ${isCollapsed ? '' : 'rounded-tl-lg shadow-sm border-l'}`}
+          className={`bg-card h-full relative overflow-y-auto ${isCollapsed ? '' : 'rounded-tl-lg shadow-sm border-l'}`}
         >
           {/* Top border that stops before the notch */}
           {!isCollapsed && (
@@ -115,7 +148,35 @@ function RouteComponent() {
               </svg>
             </div>
           )}
-          <div className="p-6 pt-16">Main</div>
+          <div className="pt-8">
+            {isLoading && (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-muted-foreground">Loading entry...</div>
+              </div>
+            )}
+            {error && (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-destructive">
+                  Failed to load entry: {error.message}
+                </div>
+              </div>
+            )}
+            {!isLoading && !error && currentEntry && (
+              <EntryForm
+                entryId={currentEntry._id}
+                initialTitle="Untitled"
+                initialContent={currentEntry.content}
+                entryDate={currentEntry.entryDate}
+              />
+            )}
+            {!isLoading && !error && !currentEntry && (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-muted-foreground">
+                  Creating your first entry...
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>

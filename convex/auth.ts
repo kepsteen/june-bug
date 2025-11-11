@@ -40,8 +40,12 @@ export const authComponent = createClient<DataModel, typeof betterAuthSchema>(
     triggers: {
       user: {
         onCreate: async (ctx, authUser) => {
+          const now = Date.now()
           const userId = await ctx.db.insert('users', {
             email: authUser.email,
+            isOnboarded: false,
+            createdAt: now,
+            updatedAt: now,
           })
           await authComponent.setUserId(ctx, authUser._id, userId)
         },
@@ -51,6 +55,7 @@ export const authComponent = createClient<DataModel, typeof betterAuthSchema>(
           }
           await ctx.db.patch(newUser.userId as Id<'users'>, {
             email: newUser.email,
+            updatedAt: Date.now(),
           })
         },
         onDelete: async (ctx, authUser) => {

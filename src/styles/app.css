@@ -1,5 +1,8 @@
 @import 'tailwindcss' source('../');
 @import 'tw-animate-css';
+@import './tiptap.css';
+
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
