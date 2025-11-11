@@ -20,6 +20,7 @@ function RouteComponent() {
   const {
     sidebarWidth,
     isCollapsed,
+    isResizing,
     sidebarRef,
     startResizing,
     toggleCollapse,
@@ -85,7 +86,7 @@ function RouteComponent() {
   }
 
   return (
-    <div className="flex h-screen w-full relative">
+    <div className={`flex h-screen w-full relative ${isResizing ? 'select-none' : ''}`}>
       {/* Left Button Group - Show single button when open, group when collapsed */}
       {isCollapsed ? (
         <div className="absolute top-[0.5rem] left-[0.5rem] z-10 flex gap-1 bg-background rounded-md p-1">
@@ -144,7 +145,7 @@ function RouteComponent() {
       {/* Resize Handle */}
       {!isCollapsed && (
         <div
-          className="w-1 bg-background cursor-col-resize transition-opacity duration-500"
+          className="w-1 bg-background cursor-col-resize hover:bg-primary/20 transition-colors"
           onMouseDown={startResizing}
         />
       )}
