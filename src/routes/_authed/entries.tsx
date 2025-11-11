@@ -6,8 +6,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { EntryForm } from '@/components/editor/entry-form'
 import { EntriesSidebar } from '@/components/sidebar/EntriesSidebar'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { useConvexMutation } from '@convex-dev/react-query'
-import { useConvex } from 'convex/react'
+import { useConvexMutation, convexQuery } from '@convex-dev/react-query'
 import { api } from '../../../convex/_generated/api'
 import { getTodayMidnight } from '@/lib/entry-utils'
 import { useEffect, useState } from 'react'
@@ -26,17 +25,14 @@ function RouteComponent() {
     toggleCollapse,
   } = useResizableSidebar()
 
-  const convex = useConvex()
-
   // State for selected entry and search
   const [selectedEntryId, setSelectedEntryId] = useState<Id<'entries'> | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Fetch all entries using standard React Query with Convex
-  const { data: entries, isLoading, error } = useQuery({
-    queryKey: ['entries'],
-    queryFn: () => convex.query(api.entries.getEntries, {}),
-  })
+  // Fetch all entries with reactive updates using convexQuery
+  const { data: entries, isLoading, error } = useQuery(
+    convexQuery(api.entries.getEntries, {})
+  )
 
   // Create entry mutation
   const { mutate: createEntry } = useMutation({

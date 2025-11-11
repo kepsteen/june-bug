@@ -1,5 +1,6 @@
 import { v } from 'convex/values'
-import { mutation, query } from './_generated/server'
+import { internalMutation, internalQuery, mutation, query } from './_generated/server'
+import { internal } from './_generated/api'
 import { getUser, safeGetUser } from './auth'
 
 /**
@@ -169,7 +170,7 @@ export const createEntry = mutation({
 
 /**
  * Update an entry
- * Can update content, entryDate, or plainText
+ * Can update content, entryDate, plainText, or aiTitle
  */
 export const updateEntry = mutation({
   args: {
@@ -177,6 +178,7 @@ export const updateEntry = mutation({
     content: v.optional(v.string()),
     plainText: v.optional(v.string()),
     entryDate: v.optional(v.number()),
+    aiTitle: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getUser(ctx)
@@ -206,7 +208,22 @@ export const updateEntry = mutation({
       updates.entryDate = args.entryDate
     }
 
+    if (args.aiTitle !== undefined) {
+      updates.aiTitle = args.aiTitle
+    }
+
     await ctx.db.patch(args.id, updates)
+
+    // Trigger AI title generation if conditions are met
+    if (args.plainText !== undefined && !entry.aiTitle) {
+      const wordCount = countWords(args.plainText)
+      if (wordCount >= 100) {
+        // Schedule AI generation asynchronously
+        await ctx.scheduler.runAfter(0, internal.ai.generateEntryTitle, {
+          entryId: args.id,
+        })
+      }
+    }
   },
 })
 
@@ -280,6 +297,47 @@ export const saveImageUrl = mutation({
     return imageUrl
   },
 })
+
+/**
+ * Internal mutation for AI action to update entry with generated title
+ * Bypasses user authentication since it's called from an action
+ */
+export const updateEntryInternal = internalMutation({
+  args: {
+    entryId: v.id('entries'),
+    aiTitle: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.entryId, {
+      aiTitle: args.aiTitle,
+      updatedAt: Date.now(),
+    })
+  },
+})
+
+/**
+ * Internal query for AI action to fetch entry without authentication
+ * Bypasses user authentication since it's called from an action
+ */
+export const getEntryInternal = internalQuery({
+  args: {
+    entryId: v.id('entries'),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.entryId)
+  },
+})
+
+/**
+ * Helper function to count words in text
+ * Used for determining when to trigger AI title generation
+ */
+function countWords(text: string): number {
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length
+}
 
 /**
  * Helper function to get midnight timestamp
