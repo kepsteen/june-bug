@@ -161,6 +161,7 @@ export function EntryForm({
       const plainText = extractPlainText(content)
       if (plainText) {
         // Save plain text separately (no need to debounce again)
+        // Backend will automatically trigger AI title generation when word count >= 100
         updateEntry({
           id: entryId,
           plainText,
