@@ -145,7 +145,7 @@ export function useEntry(entryId: string | undefined, isAuthenticated: boolean) 
   // Convex query (only used when authenticated)
   const convexEntry = useQuery(
     api.entries.getEntry,
-    isAuthenticated && entryId ? { entryId: entryId as Id<"entries"> } : "skip"
+    isAuthenticated && entryId ? { id: entryId as Id<"entries"> } : "skip"
   );
 
   // Local storage state (only used when not authenticated)

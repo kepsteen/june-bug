@@ -50,11 +50,14 @@ export const getEntries = query({
 export const getEntry = query({
   args: { id: v.id('entries') },
   handler: async (ctx, args) => {
-    const user = await getUser(ctx)
+    const user = await safeGetUser(ctx)
+    if (!user) {
+      return null
+    }
 
     const entry = await ctx.db.get(args.id)
     if (!entry || entry.userId !== user._id) {
-      throw new Error('Entry not found or unauthorized')
+      return null
     }
 
     return entry
