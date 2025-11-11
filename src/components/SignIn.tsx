@@ -18,12 +18,12 @@ import {
   migrateLocalEntriesToDatabase,
   needsMigration,
 } from '@/lib/migrate-local-entries'
-import { useConvexReactClient } from 'convex/react'
+import { useConvex } from 'convex/react'
 import { toast } from 'sonner'
 
 export const SignIn = () => {
   const navigate = useNavigate()
-  const convexClient = useConvexReactClient()
+  const convexClient = useConvex()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [otp, setOtp] = useState('')
