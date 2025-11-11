@@ -14,9 +14,16 @@ import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
 import { Container } from '@/components/Container'
+import {
+  migrateLocalEntriesToDatabase,
+  needsMigration,
+} from '@/lib/migrate-local-entries'
+import { useConvexReactClient } from 'convex/react'
+import { toast } from 'sonner'
 
 export const SignIn = () => {
   const navigate = useNavigate()
+  const convexClient = useConvexReactClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [otp, setOtp] = useState('')
@@ -24,6 +31,7 @@ export const SignIn = () => {
   const [otpLoading, setOtpLoading] = useState(false)
   // const [anonymousLoading, setAnonymousLoading] = useState(false)
   const [forgotLoading, setForgotLoading] = useState(false)
+  const [migrationLoading, setMigrationLoading] = useState(false)
   const [signInMethod, setSignInMethod] = useState<'password' | 'passwordless'>(
     'password',
   )
@@ -44,6 +52,27 @@ export const SignIn = () => {
           if (ctx.data.twoFactorRedirect) {
             //await navigate({ to: '/verify-2fa' })
           } else {
+            // Check if we need to migrate local entries
+            if (needsMigration()) {
+              setMigrationLoading(true)
+              try {
+                const result = await migrateLocalEntriesToDatabase(convexClient)
+                if (result.success) {
+                  toast.success(
+                    `Successfully migrated ${result.migratedCount} entries to your account!`
+                  )
+                } else {
+                  toast.error(
+                    `Migration completed with errors: ${result.failedCount} failed, ${result.migratedCount} succeeded`
+                  )
+                }
+              } catch (error) {
+                console.error('Migration failed:', error)
+                toast.error('Failed to migrate your entries. Please try again.')
+              } finally {
+                setMigrationLoading(false)
+              }
+            }
             await navigate({ to: '/entries' })
           }
         },
@@ -277,8 +306,24 @@ export const SignIn = () => {
 
             <div className="flex flex-col gap-2">
               {signInMethod === 'password' && (
-                <Button type="submit" className="w-full" disabled={otpLoading}>
-                  Sign in with Password
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={otpLoading || migrationLoading}
+                >
+                  {migrationLoading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin mr-2" />
+                      Migrating your entries...
+                    </>
+                  ) : otpLoading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin mr-2" />
+                      Signing in...
+                    </>
+                  ) : (
+                    'Sign in with Password'
+                  )}
                 </Button>
               )}
               {/* {signInMethod === 'passwordless' && !otpSent && (
