@@ -18,30 +18,30 @@ Your SQL schema has several critical issues (broken foreign keys, wrong data typ
 
 ### 1. Broken Foreign Keys in SQL Schema
 
-| Issue | Original (WRONG) | Fixed |
-|-------|------------------|-------|
-| Tags FK points backwards | `tags.uuid → entries_tags.id` | `entryTags.tagId → tags._id` |
-| Users FK points to streaks | `users.uuid → streaks.uuid` | `streaks.userId → users._id` |
-| Entries FK creates cycle | `entries.uuid → entries_tags.entry_uuid` | `entryTags.entryId → entries._id` |
+| Issue                      | Original (WRONG)                         | Fixed                             |
+| -------------------------- | ---------------------------------------- | --------------------------------- |
+| Tags FK points backwards   | `tags.uuid → entries_tags.id`            | `entryTags.tagId → tags._id`      |
+| Users FK points to streaks | `users.uuid → streaks.uuid`              | `streaks.userId → users._id`      |
+| Entries FK creates cycle   | `entries.uuid → entries_tags.entry_uuid` | `entryTags.entryId → entries._id` |
 
 ### 2. Data Type Issues
 
-| Field | Original (WRONG) | Fixed |
-|-------|------------------|-------|
-| `Projects.description` | `BIGINT` | `v.optional(v.string())` |
+| Field                   | Original (WRONG)        | Fixed                    |
+| ----------------------- | ----------------------- | ------------------------ |
+| `Projects.description`  | `BIGINT`                | `v.optional(v.string())` |
 | `ai_questions.category` | `CHECK IN('')` (empty!) | Proper string validation |
-| `users.phone` | `NOT NULL` | `v.optional(v.string())` |
-| `users.age` | `NOT NULL` | `v.optional(v.number())` |
+| `users.phone`           | `NOT NULL`              | `v.optional(v.string())` |
+| `users.age`             | `NOT NULL`              | `v.optional(v.number())` |
 
 ### 3. Convex Adaptations
 
-| SQL Concept | Convex Equivalent |
-|-------------|-------------------|
-| `id` (BIGINT) + `uuid` (UUID) | Single `_id: Id<"tableName">` |
-| Foreign keys | Direct references: `v.id("tableName")` |
-| `TIMESTAMP WITH TIME ZONE` | `v.number()` (ms since epoch) |
-| Join tables | Separate indexed tables |
-| `active` boolean soft delete | `isActive: v.boolean()` in queries |
+| SQL Concept                   | Convex Equivalent                      |
+| ----------------------------- | -------------------------------------- |
+| `id` (BIGINT) + `uuid` (UUID) | Single `_id: Id<"tableName">`          |
+| Foreign keys                  | Direct references: `v.id("tableName")` |
+| `TIMESTAMP WITH TIME ZONE`    | `v.number()` (ms since epoch)          |
+| Join tables                   | Separate indexed tables                |
+| `active` boolean soft delete  | `isActive: v.boolean()` in queries     |
 
 ---
 
@@ -55,14 +55,14 @@ Your SQL schema has several critical issues (broken foreign keys, wrong data typ
 // SQL had: id, uuid, email, phone (NOT NULL), active, is_onboarded, age (NOT NULL), ...
 // Convex:
 users: defineTable({
-  email: v.string(),          // Existing
+  email: v.string(), // Existing
   authId: v.optional(v.string()), // Existing (Better Auth)
 
   // NEW FIELDS TO ADD:
-  phone: v.optional(v.string()),  // Made optional ✅
-  isOnboarded: v.boolean(),       // Camel case
-  age: v.optional(v.number()),    // Made optional ✅
-  role: v.string(),               // "user" | "mentor" | "admin"
+  phone: v.optional(v.string()), // Made optional ✅
+  isOnboarded: v.boolean(), // Camel case
+  age: v.optional(v.number()), // Made optional ✅
+  role: v.string(), // "user" | "mentor" | "admin"
   title: v.optional(v.string()),
   goals: v.optional(v.string()),
   mentorshipStyle: v.optional(v.string()),
@@ -75,6 +75,7 @@ users: defineTable({
 ```
 
 **Key decisions:**
+
 - ❌ Removed `active` - use `isOnboarded` status instead
 - ✅ Made `phone` optional (not everyone has phone)
 - ✅ Made `age` optional (privacy concern)
@@ -90,11 +91,11 @@ users: defineTable({
 // SQL: id, uuid, entry_date, created_at, updated_at, note, clean_note, user_uuid, active
 // Convex:
 entries: defineTable({
-  userId: v.id('users'),           // Foreign key
-  entryDate: v.number(),           // Midnight timestamp (can be backdated)
-  content: v.string(),             // Was "note" - TipTap JSON stringified
+  userId: v.id('users'), // Foreign key
+  entryDate: v.number(), // Midnight timestamp (can be backdated)
+  content: v.string(), // Was "note" - TipTap JSON stringified
   plainText: v.optional(v.string()), // Was "clean_note" - for search
-  isActive: v.boolean(),           // Soft delete
+  isActive: v.boolean(), // Soft delete
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -104,6 +105,7 @@ entries: defineTable({
 ```
 
 **Key decisions:**
+
 - ✅ Renamed `note` → `content` (clearer for rich text)
 - ✅ Renamed `clean_note` → `plainText` (clearer intent)
 - ✅ Added compound index for sorted queries
@@ -118,6 +120,7 @@ entries: defineTable({
 **SQL had:** `tags` table + `entries_tags` join table with broken foreign keys
 
 **Convex:**
+
 ```typescript
 // Main tags table (system + user tags)
 tags: defineTable({
@@ -125,28 +128,28 @@ tags: defineTable({
   isSystemGenerated: v.boolean(),
   emoji: v.optional(v.string()),
   userId: v.optional(v.id('users')), // Null for system tags
-  color: v.optional(v.string()),     // NEW: for UI
+  color: v.optional(v.string()), // NEW: for UI
   isActive: v.boolean(),
   createdAt: v.number(),
-})
-  .index('userId_name', ['userId', 'name']) // Prevent duplicate names per user
+}).index('userId_name', ['userId', 'name']) // Prevent duplicate names per user
 
 // Join table (many-to-many)
 entryTags: defineTable({
   entryId: v.id('entries'),
   tagId: v.id('tags'),
   createdAt: v.number(),
-})
-  .index('entryId_tagId', ['entryId', 'tagId']) // Prevent duplicate tags on entry
+}).index('entryId_tagId', ['entryId', 'tagId']) // Prevent duplicate tags on entry
 ```
 
 **Key decisions:**
+
 - ✅ Join table for flexibility (can query "most used tags")
 - ✅ Supports both system and user-created tags
 - ✅ Added `color` field for better UX
 - ✅ Indexes prevent duplicate tags
 
 **Alternative (simpler but less flexible):**
+
 ```typescript
 // Embed tag IDs directly in entries:
 entries: defineTable({
@@ -154,7 +157,8 @@ entries: defineTable({
   tagIds: v.array(v.id('tags')),
 })
 ```
-*Not recommended* - harder to query tags by usage, can't track when tag was added
+
+_Not recommended_ - harder to query tags by usage, can't track when tag was added
 
 ---
 
@@ -170,8 +174,8 @@ entries: defineTable({
 // Reusable question pool (managed by admins/AI)
 aiQuestionTemplates: defineTable({
   text: v.string(),
-  category: v.string(),            // Fixed: SQL had empty enum!
-  tags: v.array(v.string()),       // NEW: for matching to user interests
+  category: v.string(), // Fixed: SQL had empty enum!
+  tags: v.array(v.string()), // NEW: for matching to user interests
   difficultyLevel: v.optional(v.string()), // NEW: personalization
   isActive: v.boolean(),
   createdAt: v.number(),
@@ -181,18 +185,18 @@ aiQuestionTemplates: defineTable({
 // User-specific question instances
 aiQuestions: defineTable({
   userId: v.id('users'),
-  entryId: v.optional(v.id('entries')),  // Null if general question
+  entryId: v.optional(v.id('entries')), // Null if general question
   templateId: v.optional(v.id('aiQuestionTemplates')), // If from pool
-  text: v.string(),                      // Can be personalized
+  text: v.string(), // Can be personalized
   category: v.string(),
-  isAnswered: v.boolean(),               // NEW: track completion
+  isAnswered: v.boolean(), // NEW: track completion
   isActive: v.boolean(),
   createdAt: v.number(),
-})
-  .index('userId_isAnswered', ['userId', 'isAnswered']) // Unanswered questions
+}).index('userId_isAnswered', ['userId', 'isAnswered']) // Unanswered questions
 ```
 
 **Why split into two tables:**
+
 - ✅ Reuse questions across users (efficiency)
 - ✅ Personalize question text per user (flexibility)
 - ✅ Track which questions are answered
@@ -209,21 +213,22 @@ aiQuestions: defineTable({
 // Convex:
 streaks: defineTable({
   userId: v.id('users'),
-  date: v.number(),                    // Midnight timestamp in user's timezone
+  date: v.number(), // Midnight timestamp in user's timezone
   timezone: v.string(),
   entryId: v.optional(v.id('entries')), // NEW: link to entry
   createdAt: v.number(),
-})
-  .index('userId_date', ['userId', 'date']) // One per user per day
+}).index('userId_date', ['userId', 'date']) // One per user per day
 ```
 
 **Key decisions:**
+
 - ✅ One record per day user journals
 - ✅ Calculate streak length in queries (not stored)
 - ✅ Link to entry for reference
 - ✅ Store timezone to handle DST correctly
 
 **Query pattern:**
+
 ```typescript
 // Calculate current streak
 const streaks = await ctx.db
@@ -281,6 +286,7 @@ entries: defineTable({
 ```
 
 **Then run:**
+
 ```bash
 npm run dev  # Convex will auto-migrate
 ```
@@ -288,21 +294,31 @@ npm run dev  # Convex will auto-migrate
 ### Phase 2: Add Tags (After entries work)
 
 ```typescript
-tags: defineTable({ /* ... */ })
-entryTags: defineTable({ /* ... */ })
+tags: defineTable({
+  /* ... */
+})
+entryTags: defineTable({
+  /* ... */
+})
 ```
 
 ### Phase 3: Add AI Questions (After tags work)
 
 ```typescript
-aiQuestionTemplates: defineTable({ /* ... */ })
-aiQuestions: defineTable({ /* ... */ })
+aiQuestionTemplates: defineTable({
+  /* ... */
+})
+aiQuestions: defineTable({
+  /* ... */
+})
 ```
 
 ### Phase 4: Add Streaks (After core features stable)
 
 ```typescript
-streaks: defineTable({ /* ... */ })
+streaks: defineTable({
+  /* ... */
+})
 ```
 
 ---
@@ -312,6 +328,7 @@ streaks: defineTable({ /* ... */ })
 ### Indexes to Add
 
 **High Priority (add immediately):**
+
 ```typescript
 // Most common query: get user's entries sorted by date
 .index('userId_isActive_entryDate', ['userId', 'isActive', 'entryDate'])
@@ -324,6 +341,7 @@ streaks: defineTable({ /* ... */ })
 ```
 
 **Medium Priority (add when features launch):**
+
 ```typescript
 // Find entries with specific tag
 .index('tagId', ['tagId']) // on entryTags
@@ -349,6 +367,7 @@ streaks: defineTable({ /* ... */ })
 ### No More UUIDs
 
 **SQL:**
+
 ```sql
 -- Every table has both id and uuid
 id BIGINT PRIMARY KEY
@@ -356,14 +375,16 @@ uuid UUID NOT NULL
 ```
 
 **Convex:**
+
 ```typescript
 // Just _id (automatically created)
-_id: Id<"entries">
+_id: Id<'entries'>
 ```
 
 ### No Explicit Foreign Keys
 
 **SQL:**
+
 ```sql
 ALTER TABLE "entries"
   ADD CONSTRAINT "entries_user_uuid_foreign"
@@ -371,6 +392,7 @@ ALTER TABLE "entries"
 ```
 
 **Convex:**
+
 ```typescript
 // Just reference the ID
 entries: defineTable({
@@ -381,11 +403,13 @@ entries: defineTable({
 ### Timestamps are Numbers
 
 **SQL:**
+
 ```sql
 created_at TIMESTAMP(0) WITH TIME ZONE NOT NULL
 ```
 
 **Convex:**
+
 ```typescript
 createdAt: v.number(), // Date.now() in milliseconds
 ```
@@ -393,11 +417,13 @@ createdAt: v.number(), // Date.now() in milliseconds
 ### No Enums (Use String Unions)
 
 **SQL:**
+
 ```sql
 category VARCHAR(255) CHECK ("category" IN('reflection', 'goals'))
 ```
 
 **Convex:**
+
 ```typescript
 // Validate in function code:
 const validCategories = ['reflection', 'goals', 'gratitude'] as const
@@ -429,18 +455,22 @@ if (!validCategories.includes(category)) {
 ## Questions to Consider
 
 1. **Do you need to migrate data from SQL database?**
+
    - If yes: We'll need data migration scripts
    - If no: Fresh start with Convex
 
 2. **User onboarding flow:**
+
    - What fields are required vs optional during signup?
    - When do you collect phone, age, mentorship preferences?
 
 3. **Tag management:**
+
    - Who creates system tags? (Admin interface needed?)
    - Can users rename/delete their tags?
 
 4. **AI question generation:**
+
    - When are questions generated? (On entry creation? Daily?)
    - How many questions per user at a time?
 
@@ -452,17 +482,17 @@ if (!validCategories.includes(category)) {
 
 ## Appendix: Full Side-by-Side Comparison
 
-| Feature | SQL Schema | Convex Schema |
-|---------|------------|---------------|
-| Primary keys | `id BIGINT` + `uuid UUID` | `_id: Id<"table">` |
-| Foreign keys | Explicit `FOREIGN KEY` | `v.id("table")` |
-| Timestamps | `TIMESTAMP WITH TIME ZONE` | `v.number()` |
-| Join tables | Same concept | Same concept |
-| Soft deletes | `active BOOLEAN` | `isActive: v.boolean()` |
-| Indexes | `CREATE INDEX` | `.index('name', ['fields'])` |
-| NOT NULL | Default | Default (use `v.optional()`) |
-| Enums | `CHECK IN(...)` | String validation in code |
-| Auto-increment | `SERIAL` | Automatic `_id` |
+| Feature        | SQL Schema                 | Convex Schema                |
+| -------------- | -------------------------- | ---------------------------- |
+| Primary keys   | `id BIGINT` + `uuid UUID`  | `_id: Id<"table">`           |
+| Foreign keys   | Explicit `FOREIGN KEY`     | `v.id("table")`              |
+| Timestamps     | `TIMESTAMP WITH TIME ZONE` | `v.number()`                 |
+| Join tables    | Same concept               | Same concept                 |
+| Soft deletes   | `active BOOLEAN`           | `isActive: v.boolean()`      |
+| Indexes        | `CREATE INDEX`             | `.index('name', ['fields'])` |
+| NOT NULL       | Default                    | Default (use `v.optional()`) |
+| Enums          | `CHECK IN(...)`            | String validation in code    |
+| Auto-increment | `SERIAL`                   | Automatic `_id`              |
 
 ---
 

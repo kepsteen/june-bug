@@ -1,9 +1,4 @@
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useState,
-} from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
 import { CommandItem, slashCommands } from './slash-command'
 import { cn } from '@/lib/utils'
 
@@ -25,7 +20,7 @@ export const SlashCommandList = forwardRef<any, SlashCommandListProps>(
 
     const upHandler = () => {
       setSelectedIndex(
-        (selectedIndex + props.items.length - 1) % props.items.length
+        (selectedIndex + props.items.length - 1) % props.items.length,
       )
     }
 
@@ -72,7 +67,7 @@ export const SlashCommandList = forwardRef<any, SlashCommandListProps>(
                 className={cn(
                   'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors',
                   'hover:bg-muted',
-                  index === selectedIndex && 'bg-muted'
+                  index === selectedIndex && 'bg-muted',
                 )}
                 onClick={() => selectItem(index)}
               >
@@ -95,7 +90,7 @@ export const SlashCommandList = forwardRef<any, SlashCommandListProps>(
         )}
       </div>
     )
-  }
+  },
 )
 
 SlashCommandList.displayName = 'SlashCommandList'

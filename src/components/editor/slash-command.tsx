@@ -32,12 +32,7 @@ export const slashCommands: CommandItem[] = [
     description: 'Just start typing with plain text.',
     icon: Type,
     command: ({ editor, range }) => {
-      editor
-        .chain()
-        .focus()
-        .deleteRange(range)
-        .setNode('paragraph')
-        .run()
+      editor.chain().focus().deleteRange(range).setNode('paragraph').run()
     },
   },
   {
@@ -84,12 +79,7 @@ export const slashCommands: CommandItem[] = [
     description: 'Create a simple bullet list.',
     icon: List,
     command: ({ editor, range }) => {
-      editor
-        .chain()
-        .focus()
-        .deleteRange(range)
-        .toggleBulletList()
-        .run()
+      editor.chain().focus().deleteRange(range).toggleBulletList().run()
     },
   },
   {
@@ -97,12 +87,7 @@ export const slashCommands: CommandItem[] = [
     description: 'Create a list with numbering.',
     icon: ListOrdered,
     command: ({ editor, range }) => {
-      editor
-        .chain()
-        .focus()
-        .deleteRange(range)
-        .toggleOrderedList()
-        .run()
+      editor.chain().focus().deleteRange(range).toggleOrderedList().run()
     },
   },
   {
@@ -110,12 +95,7 @@ export const slashCommands: CommandItem[] = [
     description: 'Track tasks with a checklist.',
     icon: CheckSquare,
     command: ({ editor, range }) => {
-      editor
-        .chain()
-        .focus()
-        .deleteRange(range)
-        .toggleTaskList()
-        .run()
+      editor.chain().focus().deleteRange(range).toggleTaskList().run()
     },
   },
   {
@@ -123,12 +103,7 @@ export const slashCommands: CommandItem[] = [
     description: 'Capture a code snippet.',
     icon: Code,
     command: ({ editor, range }) => {
-      editor
-        .chain()
-        .focus()
-        .deleteRange(range)
-        .setCodeBlock()
-        .run()
+      editor.chain().focus().deleteRange(range).setCodeBlock().run()
     },
   },
   {
@@ -136,12 +111,7 @@ export const slashCommands: CommandItem[] = [
     description: 'Format text as inline code.',
     icon: Code,
     command: ({ editor, range }) => {
-      editor
-        .chain()
-        .focus()
-        .deleteRange(range)
-        .toggleCode()
-        .run()
+      editor.chain().focus().deleteRange(range).toggleCode().run()
     },
   },
   {
@@ -149,12 +119,7 @@ export const slashCommands: CommandItem[] = [
     description: 'Capture a quote.',
     icon: Quote,
     command: ({ editor, range }) => {
-      editor
-        .chain()
-        .focus()
-        .deleteRange(range)
-        .toggleBlockquote()
-        .run()
+      editor.chain().focus().deleteRange(range).toggleBlockquote().run()
     },
   },
   {
@@ -162,12 +127,7 @@ export const slashCommands: CommandItem[] = [
     description: 'Visually divide blocks.',
     icon: Minus,
     command: ({ editor, range }) => {
-      editor
-        .chain()
-        .focus()
-        .deleteRange(range)
-        .setHorizontalRule()
-        .run()
+      editor.chain().focus().deleteRange(range).setHorizontalRule().run()
     },
   },
 ]
@@ -180,7 +140,15 @@ export const SlashCommand = Extension.create({
       suggestion: {
         char: '/',
         startOfLine: false,
-        command: ({ editor, range, props }: { editor: Editor; range: any; props: CommandItem }) => {
+        command: ({
+          editor,
+          range,
+          props,
+        }: {
+          editor: Editor
+          range: any
+          props: CommandItem
+        }) => {
           props.command({ editor, range })
         },
       },
@@ -199,9 +167,7 @@ export const SlashCommand = Extension.create({
 
 export const getSuggestionItems = ({ query }: { query: string }) => {
   return slashCommands
-    .filter((item) =>
-      item.title.toLowerCase().startsWith(query.toLowerCase())
-    )
+    .filter((item) => item.title.toLowerCase().startsWith(query.toLowerCase()))
     .slice(0, 10)
 }
 

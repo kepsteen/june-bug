@@ -28,6 +28,7 @@ npx convex dev
 ```
 
 This will:
+
 - Create a new Convex project (or link to an existing one)
 - Generate your `CONVEX_DEPLOYMENT` and `CONVEX_URL` values
 - Start the Convex development server
@@ -117,14 +118,15 @@ The Convex schema is defined in `convex/schema.ts`. Better Auth tables are autom
 ### Adding Tables
 
 1. Define your table in `convex/schema.ts`:
+
    ```typescript
    export default defineSchema({
      todos: defineTable({
        text: v.string(),
        isCompleted: v.boolean(),
-       userId: v.id("users"),
-     }).index("by_user", ["userId"]),
-   });
+       userId: v.id('users'),
+     }).index('by_user', ['userId']),
+   })
    ```
 
 2. TypeScript types are automatically generated in `convex/_generated/dataModel.d.ts`
@@ -135,26 +137,28 @@ Create queries, mutations, and actions in the `convex/` directory:
 
 ```typescript
 // convex/todos.ts
-import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { query, mutation } from './_generated/server'
+import { v } from 'convex/values'
 
 export const list = query({
   args: {},
-  returns: v.array(v.object({
-    _id: v.id("todos"),
-    text: v.string(),
-    isCompleted: v.boolean(),
-  })),
+  returns: v.array(
+    v.object({
+      _id: v.id('todos'),
+      text: v.string(),
+      isCompleted: v.boolean(),
+    }),
+  ),
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return []
 
     return await ctx.db
-      .query("todos")
-      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-      .collect();
+      .query('todos')
+      .withIndex('by_user', (q) => q.eq('userId', identity.subject))
+      .collect()
   },
-});
+})
 ```
 
 ### Server-Side Data Fetching (SSR)
@@ -186,7 +190,7 @@ export const Route = createFileRoute('/_authed')({
     if (!context.userId) {
       throw redirect({ to: '/sign-in' })
     }
-  }
+  },
 })
 ```
 
@@ -222,6 +226,7 @@ This app can be deployed to any platform that supports Node.js:
 - **Render** - Connect GitHub repo
 
 Make sure to set environment variables in your deployment platform:
+
 - `VITE_CONVEX_URL`
 - `VITE_CONVEX_SITE_URL`
 - `CONVEX_SITE_URL`

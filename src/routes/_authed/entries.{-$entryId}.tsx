@@ -1,4 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  useNavigate,
+  useBlocker,
+} from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { PanelLeft, Search, Plus } from 'lucide-react'
 import { useResizableSidebar } from '@/hooks/use-resizable-sidebar'
@@ -12,11 +16,14 @@ import { getTodayMidnight } from '@/lib/entry-utils'
 import { useEffect, useState } from 'react'
 import type { Id } from '../../../convex/_generated/dataModel'
 
-export const Route = createFileRoute('/_authed/entries')({
+export const Route = createFileRoute('/_authed/entries/{-$entryId}')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
+  const navigate = useNavigate({ from: Route.fullPath })
+  const { entryId } = Route.useParams()
+
   const {
     sidebarWidth,
     isCollapsed,
@@ -26,14 +33,16 @@ function RouteComponent() {
     toggleCollapse,
   } = useResizableSidebar()
 
-  // State for selected entry and search
-  const [selectedEntryId, setSelectedEntryId] = useState<Id<'entries'> | null>(null)
+  // State for search and dirty tracking
   const [searchTerm, setSearchTerm] = useState('')
+  const [isDirty, setIsDirty] = useState(false)
 
   // Fetch all entries with reactive updates using convexQuery
-  const { data: entries, isLoading, error } = useQuery(
-    convexQuery(api.entries.getEntries, {})
-  )
+  const {
+    data: entries,
+    isLoading,
+    error,
+  } = useQuery(convexQuery(api.entries.getEntries, {}))
 
   // Create entry mutation
   const { mutate: createEntry } = useMutation({
@@ -43,26 +52,32 @@ function RouteComponent() {
   // Create a temporary entry on mount if none exists
   useEffect(() => {
     if (!isLoading && entries && entries.length === 0) {
-      createEntry({}, {
-        onSuccess: (newEntryId) => {
-          setSelectedEntryId(newEntryId)
+      createEntry(
+        {},
+        {
+          onSuccess: (newEntryId) => {
+            navigate({
+              to: '/entries/$entryId',
+              params: { entryId: newEntryId },
+            })
+          },
+          onError: (error) => {
+            console.error('Failed to create initial entry:', error)
+          },
         },
-        onError: (error) => {
-          console.error('Failed to create initial entry:', error)
-        },
-      })
+      )
     }
-  }, [isLoading, entries, createEntry])
+  }, [isLoading, entries, createEntry, navigate])
 
-  // Set selected entry to most recent when entries load
+  // Navigate to most recent entry when entries load and no entryId in URL
   useEffect(() => {
-    if (!isLoading && entries && entries.length > 0 && !selectedEntryId) {
-      setSelectedEntryId(entries[0]._id)
+    if (!isLoading && entries && entries.length > 0 && !entryId) {
+      navigate({ to: '/entries/$entryId', params: { entryId: entries[0]._id } })
     }
-  }, [isLoading, entries, selectedEntryId])
+  }, [isLoading, entries, entryId, navigate])
 
-  // Get the currently selected entry
-  const currentEntry = entries?.find(entry => entry._id === selectedEntryId) || null
+  // Get the currently selected entry from URL params
+  const currentEntry = entries?.find((entry) => entry._id === entryId) || null
 
   // Handle creating a new entry
   const handleNewEntry = () => {
@@ -71,19 +86,34 @@ function RouteComponent() {
       { entryDate: todayMidnight },
       {
         onSuccess: (newEntryId) => {
-          setSelectedEntryId(newEntryId)
+          navigate({ to: '/entries/$entryId', params: { entryId: newEntryId } })
         },
         onError: (error) => {
           console.error('Failed to create entry:', error)
         },
-      }
+      },
     )
   }
 
   // Handle selecting an entry
-  const handleSelectEntry = (entryId: Id<'entries'>) => {
-    setSelectedEntryId(entryId)
+  const handleSelectEntry = (newEntryId: Id<'entries'>) => {
+    navigate({ to: '/entries/$entryId', params: { entryId: newEntryId } })
   }
+
+  // Handle dirty state changes from entry form
+  const handleDirtyChange = (dirty: boolean) => {
+    setIsDirty(dirty)
+  }
+
+  // Protect against browser navigation (closing tab/window with unsaved changes)
+  useBlocker({
+    shouldBlockFn: () => {
+      // Only block browser navigation (not in-app navigation)
+      // The entry form's cleanup effect will flush saves on in-app navigation
+      return false
+    },
+    enableBeforeUnload: isDirty, // Browser will show native warning
+  })
 
   return (
     <div className={`flex h-screen w-full relative ${isResizing ? 'select-none' : ''}`}>
@@ -132,7 +162,7 @@ function RouteComponent() {
       {/* Sidebar - Resizable width on left */}
       <EntriesSidebar
         entries={entries || []}
-        selectedEntryId={selectedEntryId}
+        selectedEntryId={entryId || null}
         onSelectEntry={handleSelectEntry}
         onNewEntry={handleNewEntry}
         searchTerm={searchTerm}
@@ -205,6 +235,7 @@ function RouteComponent() {
                 initialTitle="Untitled"
                 initialContent={currentEntry.content}
                 entryDate={currentEntry.entryDate}
+                onDirtyChange={handleDirtyChange}
               />
             )}
             {!isLoading && !error && !currentEntry && (

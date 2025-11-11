@@ -27,6 +27,7 @@ interface EntryFormProps {
   initialTitle?: string
   initialContent: string
   entryDate: number // Timestamp of the entry
+  onDirtyChange?: (isDirty: boolean) => void // Callback when dirty state changes
 }
 
 // Format date as "Day, Month DDth, YYYY" (e.g., "Fri, May 5th, 2023")
@@ -76,9 +77,11 @@ export function EntryForm({
   initialTitle = 'Untitled',
   initialContent,
   entryDate,
+  onDirtyChange,
 }: EntryFormProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [isDirty, setIsDirty] = useState(false)
 
   const { mutateAsync: updateEntry } = useMutation({
     mutationFn: useConvexMutation(api.entries.updateEntry),
@@ -110,6 +113,7 @@ export function EntryForm({
           ...values,
         })
         setLastSaved(new Date())
+        setIsDirty(false) // Mark as not dirty after successful save
       } catch (error) {
         console.error('Failed to save entry:', error)
         toast.error('Failed to save entry. Please try again.')
@@ -123,6 +127,7 @@ export function EntryForm({
   // Auto-save on title change
   useEffect(() => {
     if (title && title !== initialTitle) {
+      setIsDirty(true) // Mark as dirty when title changes
       debouncedSave({ title })
     }
   }, [title, initialTitle, debouncedSave])
@@ -131,6 +136,7 @@ export function EntryForm({
   const handleContentUpdate = useCallback(
     (newContent: string) => {
       setValue('content', newContent)
+      setIsDirty(true) // Mark as dirty when content changes
       debouncedSave({ content: newContent })
     },
     [setValue, debouncedSave],
@@ -172,6 +178,19 @@ export function EntryForm({
     }
   }, [content, entryId, updateEntry])
 
+  // Notify parent when dirty state changes
+  useEffect(() => {
+    onDirtyChange?.(isDirty)
+  }, [isDirty, onDirtyChange])
+
+  // Flush pending saves when entryId changes or component unmounts
+  useEffect(() => {
+    return () => {
+      // Flush any pending debounced saves before unmounting or switching entries
+      debouncedSave.flush()
+    }
+  }, [entryId, debouncedSave])
+
   return (
     <div className="flex flex-col gap-4 px-40 py-4 w-full">
       {/* Date Display */}
@@ -184,7 +203,11 @@ export function EntryForm({
         {isSaving && <span>Saving...</span>}
         {!isSaving && lastSaved && (
           <span>
-            Last saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            Last saved{' '}
+            {lastSaved.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
           </span>
         )}
       </div>

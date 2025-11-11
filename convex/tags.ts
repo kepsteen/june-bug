@@ -20,7 +20,9 @@ export const getTags = query({
       .query('tags')
       .withIndex('isSystemGenerated', (q) => q.eq('isSystemGenerated', true))
       .filter((q) =>
-        args.includeInactive ? q.eq(true, true) : q.eq(q.field('isActive'), true),
+        args.includeInactive
+          ? q.eq(true, true)
+          : q.eq(q.field('isActive'), true),
       )
       .collect()
 

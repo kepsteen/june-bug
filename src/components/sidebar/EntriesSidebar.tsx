@@ -2,7 +2,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Plus, Search, User } from 'lucide-react'
-import { groupEntriesByDate, formatEntryDate, filterEntriesBySearch } from '@/lib/entry-utils'
+import {
+  groupEntriesByDate,
+  formatEntryDate,
+  filterEntriesBySearch,
+} from '@/lib/entry-utils'
 import type { Entry } from '@/lib/entry-utils'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -44,9 +48,7 @@ export function EntriesSidebar({
         key={entry._id}
         onClick={() => onSelectEntry(entry._id)}
         className={`w-full text-left px-3 py-2 rounded-md transition-colors group ${
-          isSelected
-            ? 'bg-accent text-accent-foreground'
-            : 'hover:bg-accent/50'
+          isSelected ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'
         }`}
       >
         <div className="text-sm font-medium truncate">{displayText}</div>

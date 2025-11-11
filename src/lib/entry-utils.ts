@@ -1,4 +1,11 @@
-import { startOfDay, subDays, isToday, isYesterday, format, isSameYear } from 'date-fns'
+import {
+  startOfDay,
+  subDays,
+  isToday,
+  isYesterday,
+  format,
+  isSameYear,
+} from 'date-fns'
 import type { Doc } from '../../convex/_generated/dataModel'
 
 export type Entry = Doc<'entries'>
@@ -77,13 +84,16 @@ export function formatEntryDate(timestamp: number): string {
 /**
  * Filters entries by search term (searches in plainText field)
  */
-export function filterEntriesBySearch(entries: Entry[], searchTerm: string): Entry[] {
+export function filterEntriesBySearch(
+  entries: Entry[],
+  searchTerm: string,
+): Entry[] {
   if (!searchTerm.trim()) {
     return entries
   }
 
   const lowerSearch = searchTerm.toLowerCase()
-  return entries.filter(entry =>
-    entry.plainText?.toLowerCase().includes(lowerSearch)
+  return entries.filter((entry) =>
+    entry.plainText?.toLowerCase().includes(lowerSearch),
   )
 }
