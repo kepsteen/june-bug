@@ -103,8 +103,12 @@ function RouteComponent() {
         style={{
           width: isCollapsed ? '0px' : `${sidebarWidth}px`,
           padding: isCollapsed ? '0' : '1rem',
+          paddingTop: isCollapsed ? '0' : '3.5rem',
         }}
       >
+        {/* App Title */}
+        <h1 className="text-2xl font-bold mb-4">JuneBug</h1>
+
         {/* New Entry Button */}
         <Button className="w-full mb-3" size="default">
           <Plus className="h-4 w-4 mr-2" />
@@ -195,7 +199,7 @@ function RouteComponent() {
         </div>
 
         {/* Fixed avatar container at bottom */}
-        <div className="h-16 flex items-center gap-3 border-t pt-3 mt-3 bg-background">
+        <div className="h-16 flex items-center gap-3 mt-3 bg-background">
           <Avatar className="h-10 w-10">
             <AvatarImage src="" alt="User avatar" />
             <AvatarFallback className="bg-primary/10">
