@@ -1,12 +1,12 @@
 /* TipTap Editor Styles */
 
 .tiptap-wrapper {
-  background-color: var(--background);
+  background-color: transparent;
   color: var(--foreground);
 }
 
 .tiptap-editor {
-  background-color: var(--background);
+  background-color: transparent;
 }
 
 .tiptap-editor .ProseMirror {
@@ -43,6 +43,40 @@
   color: var(--foreground);
 }
 
+/* Reduce heading sizes and margins */
+.tiptap-editor .ProseMirror h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-editor .ProseMirror h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-top: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-editor .ProseMirror h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Reduce prose margins for lists and paragraphs */
+.tiptap-editor .ProseMirror p {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-editor .ProseMirror ul,
+.tiptap-editor .ProseMirror ol {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
 .tiptap-editor .ProseMirror strong {
   color: var(--foreground);
   font-weight: 600;
@@ -65,6 +99,12 @@
   padding: 0.125rem 0.25rem;
   border-radius: 0.25rem;
   font-size: 0.875em;
+}
+
+/* Remove Tailwind Typography's default backticks from inline code */
+.tiptap-editor .ProseMirror code::before,
+.tiptap-editor .ProseMirror code::after {
+  content: none;
 }
 
 .tiptap-editor .ProseMirror pre {
@@ -104,7 +144,7 @@
 }
 
 .tiptap-editor .ProseMirror li {
-  margin: 0.25rem 0;
+  margin: 0.125rem 0;
 }
 
 .tiptap-editor .ProseMirror img {
@@ -168,4 +208,63 @@
   color: var(--muted-foreground);
   pointer-events: none;
   height: 0;
+}
+
+/* Task List Styling */
+.tiptap-editor .ProseMirror ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.tiptap-editor .ProseMirror ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.tiptap-editor .ProseMirror ul[data-type='taskList'] li > label {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+  user-select: none;
+}
+
+.tiptap-editor .ProseMirror ul[data-type='taskList'] li > div {
+  flex: 1;
+}
+
+.tiptap-editor .ProseMirror ul[data-type='taskList'] input[type='checkbox'] {
+  cursor: pointer;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--border);
+  border-radius: 0.25rem;
+  appearance: none;
+  background-color: var(--background);
+}
+
+.tiptap-editor
+  .ProseMirror
+  ul[data-type='taskList']
+  input[type='checkbox']:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+}
+
+/* Tippy.js popups for slash command menu */
+.tippy-box {
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.tippy-content {
+  padding: 0;
+}
+
+.tippy-arrow {
+  color: var(--background);
 }

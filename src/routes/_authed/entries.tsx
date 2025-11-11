@@ -148,7 +148,7 @@ function RouteComponent() {
               </svg>
             </div>
           )}
-          <div className="pt-16">
+          <div className="pt-8">
             {isLoading && (
               <div className="flex items-center justify-center p-8">
                 <div className="text-muted-foreground">Loading entry...</div>
@@ -166,6 +166,7 @@ function RouteComponent() {
                 entryId={currentEntry._id}
                 initialTitle="Untitled"
                 initialContent={currentEntry.content}
+                entryDate={currentEntry.entryDate}
               />
             )}
             {!isLoading && !error && !currentEntry && (

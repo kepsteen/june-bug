@@ -26,12 +26,56 @@ interface EntryFormProps {
   entryId: Id<'entries'>
   initialTitle?: string
   initialContent: string
+  entryDate: number // Timestamp of the entry
+}
+
+// Format date as "Day, Month DDth, YYYY" (e.g., "Fri, May 5th, 2023")
+function formatEntryDate(timestamp: number): string {
+  const date = new Date(timestamp)
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const monthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ]
+
+  const dayOfWeek = dayNames[date.getDay()]
+  const month = monthNames[date.getMonth()]
+  const day = date.getDate()
+  const year = date.getFullYear()
+
+  // Add ordinal suffix (st, nd, rd, th)
+  const getOrdinalSuffix = (day: number) => {
+    if (day > 3 && day < 21) return 'th'
+    switch (day % 10) {
+      case 1:
+        return 'st'
+      case 2:
+        return 'nd'
+      case 3:
+        return 'rd'
+      default:
+        return 'th'
+    }
+  }
+
+  return `${dayOfWeek}, ${month} ${day}${getOrdinalSuffix(day)}, ${year}`
 }
 
 export function EntryForm({
   entryId,
   initialTitle = 'Untitled',
   initialContent,
+  entryDate,
 }: EntryFormProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
@@ -128,42 +172,27 @@ export function EntryForm({
   }, [content, entryId, updateEntry])
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      {/* Header with title and save status */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="title" className="text-lg font-semibold">
-            Entry Title
-          </Label>
-          <div className="text-sm text-muted-foreground">
-            {isSaving && <span>Saving...</span>}
-            {!isSaving && lastSaved && (
-              <span>
-                Last saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
-          </div>
-        </div>
-        <Input
-          id="title"
-          {...register('title')}
-          placeholder="Enter a title for your entry"
-          className="text-2xl font-bold h-12"
-        />
-        {errors.title && (
-          <p className="text-sm text-destructive">{errors.title.message}</p>
+    <div className="flex flex-col gap-4 px-12 py-4 max-w-5xl mx-auto">
+      {/* Date Display */}
+      <div className="text-2xl font-bold text-foreground mb-1">
+        {formatEntryDate(entryDate)}
+      </div>
+
+      {/* Save Status */}
+      <div className="text-sm text-muted-foreground mb-2">
+        {isSaving && <span>Saving...</span>}
+        {!isSaving && lastSaved && (
+          <span>
+            Last saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
         )}
       </div>
 
       {/* Editor */}
-      <div className="space-y-2">
-        <Label className="text-lg font-semibold">Content</Label>
-        <TiptapEditor
-          entryId={entryId}
-          initialContent={initialContent}
-          onUpdate={handleContentUpdate}
-        />
-      </div>
+      <TiptapEditor
+        initialContent={initialContent}
+        onUpdate={handleContentUpdate}
+      />
     </div>
   )
 }
