@@ -37,12 +37,25 @@ function RouteComponent() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isDirty, setIsDirty] = useState(false)
 
-  // Fetch all entries with reactive updates using convexQuery
+  // Fetch entries list for sidebar (without full content for better performance)
   const {
     data: entries,
-    isLoading,
-    error,
+    isLoading: isLoadingEntries,
+    error: entriesError,
   } = useQuery(convexQuery(api.entries.getEntries, {}))
+
+  // Fetch individual entry for the editor (with full content)
+  const {
+    data: currentEntry,
+    isLoading: isLoadingEntry,
+    error: entryError,
+  } = useQuery({
+    ...convexQuery(api.entries.getEntry, { id: entryId as Id<'entries'> }),
+    enabled: !!entryId, // Only fetch when we have an entryId
+  })
+
+  const isLoading = isLoadingEntries || isLoadingEntry
+  const error = entriesError || entryError
 
   // Create entry mutation
   const { mutate: createEntry } = useMutation({
@@ -51,13 +64,13 @@ function RouteComponent() {
 
   // Create a temporary entry on mount if none exists
   useEffect(() => {
-    if (!isLoading && entries && entries.length === 0) {
+    if (!isLoadingEntries && entries && entries.length === 0) {
       createEntry(
         {},
         {
           onSuccess: (newEntryId) => {
             navigate({
-              to: '/entries/$entryId',
+              to: '/entries/{-$entryId}',
               params: { entryId: newEntryId },
             })
           },
@@ -67,17 +80,14 @@ function RouteComponent() {
         },
       )
     }
-  }, [isLoading, entries, createEntry, navigate])
+  }, [isLoadingEntries, entries, createEntry, navigate])
 
   // Navigate to most recent entry when entries load and no entryId in URL
   useEffect(() => {
-    if (!isLoading && entries && entries.length > 0 && !entryId) {
-      navigate({ to: '/entries/$entryId', params: { entryId: entries[0]._id } })
+    if (!isLoadingEntries && entries && entries.length > 0 && !entryId) {
+      navigate({ to: '/entries/{-$entryId}', params: { entryId: entries[0]._id } })
     }
-  }, [isLoading, entries, entryId, navigate])
-
-  // Get the currently selected entry from URL params
-  const currentEntry = entries?.find((entry) => entry._id === entryId) || null
+  }, [isLoadingEntries, entries, entryId, navigate])
 
   // Handle creating a new entry
   const handleNewEntry = () => {
@@ -86,7 +96,7 @@ function RouteComponent() {
       { entryDate: todayMidnight },
       {
         onSuccess: (newEntryId) => {
-          navigate({ to: '/entries/$entryId', params: { entryId: newEntryId } })
+          navigate({ to: '/entries/{-$entryId}', params: { entryId: newEntryId } })
         },
         onError: (error) => {
           console.error('Failed to create entry:', error)
@@ -97,7 +107,7 @@ function RouteComponent() {
 
   // Handle selecting an entry
   const handleSelectEntry = (newEntryId: Id<'entries'>) => {
-    navigate({ to: '/entries/$entryId', params: { entryId: newEntryId } })
+    navigate({ to: '/entries/{-$entryId}', params: { entryId: newEntryId } })
   }
 
   // Handle dirty state changes from entry form

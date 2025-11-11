@@ -9,6 +9,9 @@ import {
 } from '@/lib/entry-utils'
 import type { Entry } from '@/lib/entry-utils'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { useQueryClient } from '@tanstack/react-query'
+import { convexQuery } from '@convex-dev/react-query'
+import { api } from '../../../convex/_generated/api'
 
 interface EntriesSidebarProps {
   entries: Entry[]
@@ -33,11 +36,21 @@ export function EntriesSidebar({
   isCollapsed,
   sidebarWidth,
 }: EntriesSidebarProps) {
+  const queryClient = useQueryClient()
+
   // Filter entries by search term
   const filteredEntries = filterEntriesBySearch(entries, searchTerm)
 
   // Group entries by date
   const groupedEntries = groupEntriesByDate(filteredEntries)
+
+  // Prefetch entry data on hover for instant switching
+  const prefetchEntry = (entryId: Id<'entries'>) => {
+    queryClient.prefetchQuery({
+      ...convexQuery(api.entries.getEntry, { id: entryId }),
+      staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
+    })
+  }
 
   const renderEntryButton = (entry: Entry) => {
     const isSelected = entry._id === selectedEntryId
@@ -47,6 +60,8 @@ export function EntriesSidebar({
       <button
         key={entry._id}
         onClick={() => onSelectEntry(entry._id)}
+        onMouseEnter={() => prefetchEntry(entry._id)}
+        onFocus={() => prefetchEntry(entry._id)}
         className={`w-full text-left px-3 py-2 rounded-md transition-colors group ${
           isSelected ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'
         }`}

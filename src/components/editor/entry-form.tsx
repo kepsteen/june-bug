@@ -2,13 +2,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { TiptapEditor } from './tiptap-editor'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { useMutation } from '@tanstack/react-query'
 import { useConvexMutation } from '@convex-dev/react-query'
 import { api } from '../../../convex/_generated/api'
 import { toast } from 'sonner'
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useState, useRef } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -83,6 +81,12 @@ export function EntryForm({
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [isDirty, setIsDirty] = useState(false)
 
+  // Track current entryId to prevent stale closures in debounced callbacks
+  const entryIdRef = useRef(entryId)
+  // Track initial values to prevent unnecessary saves
+  const initialTitleRef = useRef(initialTitle)
+  const initialContentRef = useRef(initialContent)
+
   const { mutateAsync: updateEntry } = useMutation({
     mutationFn: useConvexMutation(api.entries.updateEntry),
   })
@@ -109,7 +113,7 @@ export function EntryForm({
       setIsSaving(true)
       try {
         await updateEntry({
-          id: entryId,
+          id: entryIdRef.current,
           ...values,
         })
         setLastSaved(new Date())
@@ -122,22 +126,36 @@ export function EntryForm({
       }
     },
     1000, // 1 second debounce
+    { maxWait: 2000 }, // Force save after 2 seconds max
   )
 
-  // Auto-save on title change
+  // Update refs and reset state when entry changes
   useEffect(() => {
-    if (title && title !== initialTitle) {
+    entryIdRef.current = entryId
+    initialTitleRef.current = initialTitle
+    initialContentRef.current = initialContent
+    setIsDirty(false)
+    setLastSaved(null)
+  }, [entryId, initialTitle, initialContent])
+
+  // Auto-save on title change (only if actually different from initial)
+  useEffect(() => {
+    // Only save if title has changed from the initial value for this entry
+    if (title && title !== initialTitleRef.current) {
       setIsDirty(true) // Mark as dirty when title changes
       debouncedSave({ title })
     }
-  }, [title, initialTitle, debouncedSave])
+  }, [title, debouncedSave])
 
-  // Auto-save on content change
+  // Auto-save on content change (only if actually different from initial)
   const handleContentUpdate = useCallback(
     (newContent: string) => {
       setValue('content', newContent)
-      setIsDirty(true) // Mark as dirty when content changes
-      debouncedSave({ content: newContent })
+      // Only mark as dirty and save if content has actually changed
+      if (newContent !== initialContentRef.current) {
+        setIsDirty(true) // Mark as dirty when content changes
+        debouncedSave({ content: newContent })
+      }
     },
     [setValue, debouncedSave],
   )
@@ -161,33 +179,39 @@ export function EntryForm({
     }
   }
 
-  // Update plain text whenever content changes
+  // Update plain text whenever content changes (only if different from initial)
   useEffect(() => {
-    if (content) {
+    // Only update plain text if content has changed from initial value
+    if (content && content !== initialContentRef.current) {
       const plainText = extractPlainText(content)
       if (plainText) {
+        // Verify we're still on the same entry before saving
+        const currentEntryId = entryIdRef.current
         // Save plain text separately (no need to debounce again)
         // Backend will automatically trigger AI title generation when word count >= 100
         updateEntry({
-          id: entryId,
+          id: currentEntryId,
           plainText,
         }).catch((error) => {
-          console.error('Failed to update plain text:', error)
+          // Only log error if we're still on the same entry
+          if (entryIdRef.current === currentEntryId) {
+            console.error('Failed to update plain text:', error)
+          }
         })
       }
     }
-  }, [content, entryId, updateEntry])
+  }, [content, updateEntry])
 
   // Notify parent when dirty state changes
   useEffect(() => {
     onDirtyChange?.(isDirty)
   }, [isDirty, onDirtyChange])
 
-  // Flush pending saves when entryId changes or component unmounts
+  // Cancel pending saves when entryId changes or component unmounts
   useEffect(() => {
     return () => {
-      // Flush any pending debounced saves before unmounting or switching entries
-      debouncedSave.flush()
+      // Cancel any pending debounced saves to prevent stale data from being saved
+      debouncedSave.cancel()
     }
   }, [entryId, debouncedSave])
 

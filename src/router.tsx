@@ -26,6 +26,10 @@ export function getRouter() {
       queries: {
         queryKeyHashFn: convexQueryClient.hashFn(),
         queryFn: convexQueryClient.queryFn(),
+        // Convex queries are never stale - data updates are pushed reactively
+        staleTime: Infinity,
+        // Keep inactive queries in cache for 5 minutes
+        gcTime: 1000 * 60 * 5,
       },
     },
   })
