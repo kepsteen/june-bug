@@ -9,7 +9,9 @@
       "Bash(npm run dev:*)",
       "Bash(npm install:*)",
       "Bash(npx shadcn@latest add toggle separator dialog form toast)",
-      "Bash(npx shadcn@latest add toggle separator dialog form sonner)"
+      "Bash(npx shadcn@latest add toggle separator dialog form sonner)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -4,7 +4,9 @@ import { PanelLeft, Search, Plus } from 'lucide-react'
 import { useResizableSidebar } from '@/hooks/use-resizable-sidebar'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { EntryForm } from '@/components/editor/entry-form'
-import { useConvexQuery, useConvexMutation } from '@convex-dev/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { useConvexMutation } from '@convex-dev/react-query'
+import { useConvex } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { useEffect } from 'react'
 
@@ -21,20 +23,26 @@ function RouteComponent() {
     toggleCollapse,
   } = useResizableSidebar()
 
-  // Fetch all entries
-  const { data: entries, isLoading, error } = useConvexQuery(
-    api.entries.getEntries,
-    {},
-  )
+  const convex = useConvex()
+
+  // Fetch all entries using standard React Query with Convex
+  const { data: entries, isLoading, error } = useQuery({
+    queryKey: ['entries'],
+    queryFn: () => convex.query(api.entries.getEntries, {}),
+  })
 
   // Create entry mutation
-  const createEntry = useConvexMutation(api.entries.createEntry)
+  const { mutate: createEntry } = useMutation({
+    mutationFn: useConvexMutation(api.entries.createEntry),
+  })
 
   // Create a temporary entry on mount if none exists
   useEffect(() => {
     if (!isLoading && entries && entries.length === 0) {
-      createEntry({}).catch((error) => {
-        console.error('Failed to create initial entry:', error)
+      createEntry({}, {
+        onError: (error) => {
+          console.error('Failed to create initial entry:', error)
+        },
       })
     }
   }, [isLoading, entries, createEntry])

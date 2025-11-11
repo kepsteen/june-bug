@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { TiptapEditor } from './tiptap-editor'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useMutation } from '@tanstack/react-query'
 import { useConvexMutation } from '@convex-dev/react-query'
 import { api } from '../../../convex/_generated/api'
 import { toast } from 'sonner'
@@ -35,7 +36,9 @@ export function EntryForm({
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
 
-  const updateEntry = useConvexMutation(api.entries.updateEntry)
+  const { mutateAsync: updateEntry } = useMutation({
+    mutationFn: useConvexMutation(api.entries.updateEntry),
+  })
 
   const {
     register,
