@@ -82,7 +82,14 @@ export function EntriesSidebar({
       }}
     >
       {/* App Title */}
-      <h1 className="text-2xl font-bold mb-4">JuneBug</h1>
+      <h1 className="text-2xl font-bold mb-2 text-center">JuneBug</h1>
+
+      {/* Logo */}
+      <img
+        src="/apple-touch-icon.png"
+        alt="JuneBug Logo"
+        className="w-16 h-16 mb-4 mx-auto"
+      />
 
       {/* New Entry Button */}
       <Button className="w-full mb-3" size="default" onClick={onNewEntry}>

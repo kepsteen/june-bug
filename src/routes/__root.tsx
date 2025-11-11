@@ -49,13 +49,14 @@ export const Route = createRootRouteWithContext<{
         content: 'width=device-width, initial-scale=1',
       },
       ...seo({
-        title: 'Convex + Better Auth + TanStack Start',
-        description: `Convex + Better Auth + TanStack Start`,
+        title: 'JuneBug - Your Personal Journal',
+        description: `JuneBug is your personal journaling companion, helping you capture thoughts, memories, and moments.`,
       }),
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
       { rel: 'icon', href: '/favicon.ico' },
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
     ],
   }),
   beforeLoad: async (ctx) => {
