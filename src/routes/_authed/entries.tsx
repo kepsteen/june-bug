@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { PanelLeft, Search, Plus, User } from 'lucide-react'
 import { useResizableSidebar } from '@/hooks/use-resizable-sidebar'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -71,26 +72,97 @@ function RouteComponent() {
           padding: isCollapsed ? '0' : '1rem',
         }}
       >
-        {/* Scrollable content area */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Demo content to show scrolling */}
-          <div className="space-y-2">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <div
-                key={i}
-                className="p-3 rounded-md border bg-card hover:bg-accent/50 transition-colors"
-              >
-                <div className="text-sm font-medium">Item {i + 1}</div>
-                <div className="text-xs text-muted-foreground">
-                  Sample content
-                </div>
+        {/* New Entry Button */}
+        <Button className="w-full mb-3" size="default">
+          <Plus className="h-4 w-4 mr-2" />
+          New Entry
+        </Button>
+
+        {/* Search Input */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="search your entries"
+            className="pl-9"
+          />
+        </div>
+
+        {/* Scrollable entries area with fade gradient */}
+        <div className="flex-1 relative overflow-hidden">
+          <div className="h-full overflow-y-auto pb-2">
+            {/* Last 7 Days */}
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-muted-foreground mb-2 px-2">
+                Last 7 Days
+              </h3>
+              <div className="space-y-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <button
+                    key={`week-${i}`}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-accent/50 transition-colors group"
+                  >
+                    <div className="text-sm font-medium truncate">
+                      Entry Title {i + 1}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      Some preview text...
+                    </div>
+                  </button>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Last 30 Days */}
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-muted-foreground mb-2 px-2">
+                Last 30 Days
+              </h3>
+              <div className="space-y-1">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <button
+                    key={`month-${i}`}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-accent/50 transition-colors group"
+                  >
+                    <div className="text-sm font-medium truncate">
+                      Entry Title {i + 6}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      Some preview text...
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Older */}
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-muted-foreground mb-2 px-2">
+                Older
+              </h3>
+              <div className="space-y-1">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <button
+                    key={`older-${i}`}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-accent/50 transition-colors group"
+                  >
+                    <div className="text-sm font-medium truncate">
+                      Entry Title {i + 14}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      Some preview text...
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
+
+          {/* Fade gradient above avatar */}
+          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
         </div>
 
         {/* Fixed avatar container at bottom */}
-        <div className="h-16 flex items-center gap-3 border-t pt-3 mt-3">
+        <div className="h-16 flex items-center gap-3 border-t pt-3 mt-3 bg-background">
           <Avatar className="h-10 w-10">
             <AvatarImage src="" alt="User avatar" />
             <AvatarFallback className="bg-primary/10">
