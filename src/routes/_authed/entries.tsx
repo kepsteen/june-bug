@@ -97,10 +97,7 @@ function RouteComponent() {
               <User className="h-5 w-5 text-primary" />
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-sm font-medium truncate">User Name</span>
-            <span className="text-xs text-muted-foreground truncate">user@example.com</span>
-          </div>
+          <span className="text-sm font-medium truncate">John</span>
         </div>
       </aside>
 
