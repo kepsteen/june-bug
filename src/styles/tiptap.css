@@ -1,0 +1,171 @@
+/* TipTap Editor Styles */
+
+.tiptap-wrapper {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.tiptap-editor {
+  background-color: var(--background);
+}
+
+.tiptap-editor .ProseMirror {
+  min-height: 500px;
+  padding: 1rem;
+  outline: none;
+}
+
+/* Placeholder styling */
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--muted-foreground);
+  pointer-events: none;
+  height: 0;
+}
+
+/* Prose styling for light mode */
+.tiptap-editor .ProseMirror {
+  @apply prose prose-sm sm:prose lg:prose-lg xl:prose-2xl max-w-none;
+}
+
+/* Override prose colors to use CSS variables */
+.tiptap-editor .ProseMirror {
+  color: var(--foreground);
+}
+
+.tiptap-editor .ProseMirror h1,
+.tiptap-editor .ProseMirror h2,
+.tiptap-editor .ProseMirror h3,
+.tiptap-editor .ProseMirror h4,
+.tiptap-editor .ProseMirror h5,
+.tiptap-editor .ProseMirror h6 {
+  color: var(--foreground);
+}
+
+.tiptap-editor .ProseMirror strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.tiptap-editor .ProseMirror a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.tiptap-editor .ProseMirror a:hover {
+  color: var(--primary);
+  opacity: 0.8;
+}
+
+.tiptap-editor .ProseMirror code {
+  background-color: var(--muted);
+  color: var(--foreground);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.tiptap-editor .ProseMirror pre {
+  background-color: var(--muted);
+  color: var(--foreground);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.tiptap-editor .ProseMirror pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.tiptap-editor .ProseMirror blockquote {
+  border-left: 4px solid var(--border);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+
+.tiptap-editor .ProseMirror hr {
+  border-color: var(--border);
+}
+
+.tiptap-editor .ProseMirror ul,
+.tiptap-editor .ProseMirror ol {
+  padding-left: 1.5rem;
+}
+
+.tiptap-editor .ProseMirror ul {
+  list-style-type: disc;
+}
+
+.tiptap-editor .ProseMirror ol {
+  list-style-type: decimal;
+}
+
+.tiptap-editor .ProseMirror li {
+  margin: 0.25rem 0;
+}
+
+.tiptap-editor .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+/* Dark mode specific overrides */
+.dark .tiptap-editor .ProseMirror {
+  color: var(--foreground);
+}
+
+.dark .tiptap-editor .ProseMirror h1,
+.dark .tiptap-editor .ProseMirror h2,
+.dark .tiptap-editor .ProseMirror h3,
+.dark .tiptap-editor .ProseMirror h4,
+.dark .tiptap-editor .ProseMirror h5,
+.dark .tiptap-editor .ProseMirror h6 {
+  color: var(--foreground);
+}
+
+.dark .tiptap-editor .ProseMirror strong {
+  color: var(--foreground);
+}
+
+.dark .tiptap-editor .ProseMirror code {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.dark .tiptap-editor .ProseMirror pre {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.dark .tiptap-editor .ProseMirror blockquote {
+  border-left-color: var(--border);
+  color: var(--muted-foreground);
+}
+
+.dark .tiptap-editor .ProseMirror hr {
+  border-color: var(--border);
+}
+
+/* Selection styling */
+.tiptap-editor .ProseMirror ::selection {
+  background-color: var(--accent);
+}
+
+/* Focus styling */
+.tiptap-editor .ProseMirror:focus {
+  outline: none;
+}
+
+/* Empty paragraph styling */
+.tiptap-editor .ProseMirror p.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--muted-foreground);
+  pointer-events: none;
+  height: 0;
+}

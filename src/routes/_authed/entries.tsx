@@ -3,6 +3,10 @@ import { Button } from '@/components/ui/button'
 import { PanelLeft, Search, Plus } from 'lucide-react'
 import { useResizableSidebar } from '@/hooks/use-resizable-sidebar'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { EntryForm } from '@/components/editor/entry-form'
+import { useConvexQuery, useConvexMutation } from '@convex-dev/react-query'
+import { api } from '../../../convex/_generated/api'
+import { useEffect } from 'react'
 
 export const Route = createFileRoute('/_authed/entries')({
   component: RouteComponent,
@@ -16,6 +20,27 @@ function RouteComponent() {
     startResizing,
     toggleCollapse,
   } = useResizableSidebar()
+
+  // Fetch all entries
+  const { data: entries, isLoading, error } = useConvexQuery(
+    api.entries.getEntries,
+    {},
+  )
+
+  // Create entry mutation
+  const createEntry = useConvexMutation(api.entries.createEntry)
+
+  // Create a temporary entry on mount if none exists
+  useEffect(() => {
+    if (!isLoading && entries && entries.length === 0) {
+      createEntry({}).catch((error) => {
+        console.error('Failed to create initial entry:', error)
+      })
+    }
+  }, [isLoading, entries, createEntry])
+
+  // Get the most recent entry (or null if still loading)
+  const currentEntry = entries && entries.length > 0 ? entries[0] : null
 
   return (
     <div className="flex min-h-screen w-full relative">
@@ -115,7 +140,34 @@ function RouteComponent() {
               </svg>
             </div>
           )}
-          <div className="p-6 pt-16">Main</div>
+          <div className="pt-16">
+            {isLoading && (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-muted-foreground">Loading entry...</div>
+              </div>
+            )}
+            {error && (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-destructive">
+                  Failed to load entry: {error.message}
+                </div>
+              </div>
+            )}
+            {!isLoading && !error && currentEntry && (
+              <EntryForm
+                entryId={currentEntry._id}
+                initialTitle="Untitled"
+                initialContent={currentEntry.content}
+              />
+            )}
+            {!isLoading && !error && !currentEntry && (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-muted-foreground">
+                  Creating your first entry...
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
