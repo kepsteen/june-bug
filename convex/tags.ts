@@ -232,10 +232,11 @@ export const updateTag = mutation({
 
     // Check for name conflicts if changing name
     if (args.name && args.name !== tag.name) {
+      const newName = args.name // Capture for type narrowing
       const existingTags = await ctx.db
         .query('tags')
         .withIndex('userId_name', (q) =>
-          q.eq('userId', user._id).eq('name', args.name),
+          q.eq('userId', user._id).eq('name', newName),
         )
         .filter((q) => q.eq(q.field('isActive'), true))
         .collect()
@@ -430,7 +431,7 @@ export const getTagStats = query({
     // Get all user's entries
     const entries = await ctx.db
       .query('entries')
-      .withIndex('userId_isActive', (q) =>
+      .withIndex('userId_isActive_entryDate', (q) =>
         q.eq('userId', user._id).eq('isActive', true),
       )
       .collect()
@@ -451,16 +452,23 @@ export const getTagStats = query({
     }
 
     // Fetch tag details and combine with counts
-    const tagStats = await Promise.all(
-      Array.from(tagCounts.entries()).map(async ([tagId, count]) => {
-        const tag = await ctx.db.get(tagId as any)
-        return tag ? { tag, usageCount: count } : null
-      }),
-    )
+    const tagStats: Array<{ tag: any; usageCount: number } | null> =
+      await Promise.all(
+        Array.from(tagCounts.entries()).map(async ([tagId, count]) => {
+          const tag = await ctx.db.get(tagId as any)
+          return tag ? { tag, usageCount: count } : null
+        }),
+      )
 
-    // Filter out null results and sort by usage
-    return tagStats
-      .filter((stat) => stat !== null && stat.tag.isActive)
-      .sort((a, b) => b!.usageCount - a!.usageCount)
+    // Filter out null results and only include active tags
+    const validStats: Array<{ tag: any; usageCount: number }> = []
+    for (const stat of tagStats) {
+      if (stat && stat.tag && 'isActive' in stat.tag && stat.tag.isActive) {
+        validStats.push(stat)
+      }
+    }
+
+    // Sort by usage
+    return validStats.sort((a, b) => b.usageCount - a.usageCount)
   },
 })
