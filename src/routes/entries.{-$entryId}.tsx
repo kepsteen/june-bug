@@ -6,9 +6,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { PanelLeft, Search, Plus } from 'lucide-react'
 import { useResizableSidebar } from '@/hooks/use-resizable-sidebar'
+import { useCollapsibleRightSidebar } from '@/hooks/use-collapsible-right-sidebar'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { EntryForm } from '@/components/editor/entry-form'
 import { EntriesSidebar } from '@/components/sidebar/EntriesSidebar'
+import { PromptsSidebar, type PromptCategory } from '@/components/editor/prompts-sidebar'
 import { getTodayMidnight } from '@/lib/entry-utils'
 import { useEffect, useState } from 'react'
 import { useEntries, useEntry } from '@/hooks/use-entries'
@@ -22,7 +24,6 @@ import {
 import { toast } from 'sonner'
 import { api } from '@/../convex/_generated/api'
 import { FloatingJuneBug } from '@/components/floating-june-bug'
-import { OnboardingPromptModal } from '@/components/onboarding-prompt-modal'
 
 export const Route = createFileRoute('/entries/{-$entryId}')({
   component: RouteComponent,
@@ -49,14 +50,19 @@ function RouteComponent() {
     toggleCollapse,
   } = useResizableSidebar()
 
+  const {
+    isCollapsed: rightSidebarCollapsed,
+    toggleCollapse: toggleRightSidebar,
+  } = useCollapsibleRightSidebar()
+
   // State for search and dirty tracking
   const [searchTerm, setSearchTerm] = useState('')
   const [isDirty, setIsDirty] = useState(false)
   const [hasMigrated, setHasMigrated] = useState(false)
 
-  // State for June Bug animation and prompt modal
+  // State for June Bug animation and prompts sidebar
   const [showJuneBugAnimation, setShowJuneBugAnimation] = useState(false)
-  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<PromptCategory | null>(null)
 
   // Use unified entry hooks
   const {
@@ -157,7 +163,12 @@ function RouteComponent() {
 
   // Handle June Bug click
   const handleJuneBugClick = () => {
-    setIsPromptModalOpen(true)
+    // Toggle sidebar
+    if (rightSidebarCollapsed) {
+      // Opening sidebar - reset to category selection
+      setSelectedCategory(null)
+    }
+    toggleRightSidebar()
     // Clicking the logo stops the animation
     setShowJuneBugAnimation(false)
   }
@@ -167,9 +178,22 @@ function RouteComponent() {
     setShowJuneBugAnimation(false)
   }
 
-  // Handle prompt modal state change
-  const handlePromptModalChange = (open: boolean) => {
-    setIsPromptModalOpen(open)
+  // Handle category selection in sidebar
+  const handleCategorySelect = (category: PromptCategory) => {
+    setSelectedCategory(category)
+  }
+
+  // Handle back to category selection
+  const handleBackToCategories = () => {
+    setSelectedCategory(null)
+  }
+
+  // Handle closing prompts sidebar
+  const handleClosePrompts = () => {
+    setSelectedCategory(null)
+    if (!rightSidebarCollapsed) {
+      toggleRightSidebar()
+    }
   }
 
   // Protect against browser navigation (closing tab/window with unsaved changes)
@@ -215,15 +239,21 @@ function RouteComponent() {
         </Button>
       )}
 
-      {/* Right Theme Toggle - Show in button group style when collapsed, standalone when open */}
+      {/* Theme Toggle - Show in button group style when left sidebar collapsed, standalone when open */}
       {isCollapsed ? (
-        <div className="absolute top-[0.5rem] right-[0.5rem] z-10 flex gap-1 bg-background rounded-md p-1">
+        <div
+          className="absolute top-[0.5rem] z-10 bg-background rounded-md p-1 transition-[right] duration-300 ease-in-out"
+          style={{ right: rightSidebarCollapsed ? '0.5rem' : 'calc(320px + 0.5rem)' }}
+        >
           <div className="h-8 w-8 flex items-center justify-center">
             <ThemeToggle />
           </div>
         </div>
       ) : (
-        <div className="absolute top-[0.75rem] right-[0.75rem] z-10">
+        <div
+          className="absolute top-[0.75rem] z-10 transition-[right] duration-300 ease-in-out"
+          style={{ right: rightSidebarCollapsed ? '0.75rem' : 'calc(320px + 0.75rem)' }}
+        >
           <ThemeToggle />
         </div>
       )}
@@ -316,17 +346,21 @@ function RouteComponent() {
         </div>
       </main>
 
+      {/* Right Sidebar - Prompts */}
+      <PromptsSidebar
+        isCollapsed={rightSidebarCollapsed}
+        selectedCategory={selectedCategory}
+        onCategorySelect={handleCategorySelect}
+        onBack={handleBackToCategories}
+        onClose={handleClosePrompts}
+      />
+
       {/* Floating June Bug Logo */}
       <FloatingJuneBug
         shouldAnimate={showJuneBugAnimation}
+        isSidebarOpen={!rightSidebarCollapsed}
         onAnimationComplete={handleAnimationComplete}
         onClick={handleJuneBugClick}
-      />
-
-      {/* Onboarding Prompt Modal */}
-      <OnboardingPromptModal
-        open={isPromptModalOpen}
-        onOpenChange={handlePromptModalChange}
       />
     </div>
   )

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -6,17 +5,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { ChevronLeft } from 'lucide-react'
+
+export type PromptCategory = 'working-on' | 'win' | 'bug' | 'lesson'
 
 interface OnboardingPromptModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onCategorySelect: (category: PromptCategory) => void
 }
 
-type PromptCategory = 'working-on' | 'win' | 'bug' | 'lesson' | null
-
-const mainPrompts = [
+const categories = [
   {
     id: 'working-on' as PromptCategory,
     icon: '💼',
@@ -47,142 +45,56 @@ const mainPrompts = [
   },
 ]
 
-const detailedPrompts: Record<string, string[]> = {
-  'working-on': [
-    'What feature or task are you implementing today?',
-    'What\'s the most challenging part of what you\'re building?',
-    'What libraries or technologies are you exploring?',
-    'What\'s your current progress on this project?',
-  ],
-  'win': [
-    'What bug did you finally solve today?',
-    'What new skill or concept did you master?',
-    'What code are you proud of shipping?',
-    'What milestone did you hit in your project?',
-  ],
-  'bug': [
-    'What bug are you currently debugging?',
-    'What error message are you trying to understand?',
-    'What unexpected behavior did you encounter?',
-    'What\'s breaking in production or testing?',
-  ],
-  'lesson': [
-    'What pattern or anti-pattern did you discover?',
-    'What gotcha or edge case did you learn about?',
-    'What would you do differently next time?',
-    'What insight will help future you or your team?',
-  ],
-}
-
 export function OnboardingPromptModal({
   open,
   onOpenChange,
+  onCategorySelect,
 }: OnboardingPromptModalProps) {
-  const [selectedCategory, setSelectedCategory] = useState<PromptCategory>(null)
-
   const handleCategoryClick = (categoryId: PromptCategory) => {
-    setSelectedCategory(categoryId)
-  }
-
-  const handleDetailedPromptClick = () => {
+    onCategorySelect(categoryId)
     onOpenChange(false)
-    setSelectedCategory(null)
   }
-
-  const handleBack = () => {
-    setSelectedCategory(null)
-  }
-
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      setSelectedCategory(null)
-    }
-    onOpenChange(open)
-  }
-
-  const selectedPrompt = mainPrompts.find((p) => p.id === selectedCategory)
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle className="text-2xl">
-            {selectedCategory
-              ? `${selectedPrompt?.icon} ${selectedPrompt?.title}`
-              : "What's on your mind?"}
-          </DialogTitle>
+          <DialogTitle className="text-2xl">What's on your mind?</DialogTitle>
           <DialogDescription className="text-base">
-            {selectedCategory
-              ? 'Choose a reflection prompt to guide your thoughts'
-              : 'Choose a prompt to help guide your entry, or just start writing!'}
+            Choose a category to see helpful writing prompts
           </DialogDescription>
         </DialogHeader>
 
-        {selectedCategory && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleBack}
-            className="mt-4 w-fit gap-2"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back to categories
-          </Button>
-        )}
-
-        {!selectedCategory ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-            {mainPrompts.map((prompt) => (
-              <button
-                key={prompt.id}
-                onClick={() => handleCategoryClick(prompt.id)}
-                className={`
-                  group relative p-4 rounded-lg border border-border
-                  bg-gradient-to-br ${prompt.color}
-                  transition-all duration-200
-                  hover:scale-[1.02] hover:shadow-md
-                  focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
-                  text-left h-32
-                `}
-              >
-                <div className="flex items-start gap-3">
-                  <span className="text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">
-                    {prompt.icon}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-                      {prompt.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {prompt.description}
-                    </p>
-                  </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => handleCategoryClick(category.id)}
+              className={`
+                group relative p-4 rounded-lg border border-border
+                bg-gradient-to-br ${category.color}
+                transition-all duration-200
+                hover:scale-[1.02] hover:shadow-md
+                focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
+                text-left h-32
+              `}
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">
+                  {category.icon}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
+                    {category.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {category.description}
+                  </p>
                 </div>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-2 mt-4">
-            {detailedPrompts[selectedCategory]?.map((prompt, index) => (
-              <button
-                key={index}
-                onClick={handleDetailedPromptClick}
-                className={`
-                  group relative p-4 rounded-lg border border-border
-                  bg-gradient-to-br ${selectedPrompt?.color}
-                  transition-all duration-200
-                  hover:scale-[1.01] hover:shadow-md
-                  focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
-                  text-left
-                `}
-              >
-                <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                  {prompt}
-                </p>
-              </button>
-            ))}
-          </div>
-        )}
+              </div>
+            </button>
+          ))}
+        </div>
       </DialogContent>
     </Dialog>
   )

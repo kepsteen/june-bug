@@ -60,7 +60,9 @@ export function EntriesSidebar({
   const handleLogout = async () => {
     try {
       await authClient.signOut()
-      toast.success('Logged out successfully. You can continue using the app offline.')
+      toast.success(
+        'Logged out successfully. You can continue using the app offline.',
+      )
       // Reload the page to reset auth state and switch to local storage mode
       window.location.href = '/entries'
     } catch (error) {
@@ -111,12 +113,12 @@ export function EntriesSidebar({
       {/* App Title */}
       <h1 className="text-2xl font-bold mb-2 text-center">JuneBug</h1>
 
-      {/* Logo */}
+      {/* Logo
       <img
         src="/apple-touch-icon.png"
         alt="JuneBug Logo"
         className="w-16 h-16 mb-2 mx-auto"
-      />
+      /> */}
 
       {/* Demo Mode Badge - Only show for guests */}
       {!isAuthenticated && (
