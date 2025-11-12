@@ -12,7 +12,9 @@ import { EntriesSidebar } from '@/components/sidebar/EntriesSidebar'
 import { getTodayMidnight } from '@/lib/entry-utils'
 import { useEffect, useState } from 'react'
 import { useEntries, useEntry } from '@/hooks/use-entries'
-import { useConvex, useQuery } from 'convex/react'
+import { useConvex } from 'convex/react'
+import { useQuery } from '@tanstack/react-query'
+import { convexQuery } from '@convex-dev/react-query'
 import {
   migrateLocalEntriesToDatabase,
   needsMigration,
@@ -34,7 +36,7 @@ function RouteComponent() {
   const isAuthenticated = !!context.userId
 
   // Get current user data (name and image from better-auth)
-  const currentUser = useQuery(api.auth.getCurrentUser)
+  const { data: currentUser } = useQuery(convexQuery(api.auth.getCurrentUser, {}))
 
   const {
     sidebarWidth,

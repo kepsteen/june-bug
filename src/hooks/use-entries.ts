@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import type { JSONContent } from "@tiptap/core";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -39,13 +40,18 @@ function localToUnified(local: LocalEntry): UnifiedEntry {
  */
 export function useEntries(isAuthenticated: boolean) {
   // Convex queries and mutations (only used when authenticated)
-  const convexEntries = useQuery(
-    api.entries.getEntries,
-    isAuthenticated ? {} : "skip"
+  const { data: convexEntries } = useQuery(
+    convexQuery(api.entries.getEntries, isAuthenticated ? {} : "skip")
   );
-  const convexCreateEntry = useMutation(api.entries.createEntry);
-  const convexUpdateEntry = useMutation(api.entries.updateEntry);
-  const convexDeleteEntry = useMutation(api.entries.deleteEntry);
+  const { mutateAsync: convexCreateEntry } = useMutation({
+    mutationFn: useConvexMutation(api.entries.createEntry),
+  });
+  const { mutateAsync: convexUpdateEntry } = useMutation({
+    mutationFn: useConvexMutation(api.entries.updateEntry),
+  });
+  const { mutateAsync: convexDeleteEntry } = useMutation({
+    mutationFn: useConvexMutation(api.entries.deleteEntry),
+  });
 
   // Local storage state (only used when not authenticated)
   const [localEntries, setLocalEntries] = useState<LocalEntry[]>([]);
@@ -65,8 +71,8 @@ export function useEntries(isAuthenticated: boolean) {
     ? convexEntries?.map((e) => ({
         _id: e._id,
         entryDate: e.entryDate,
-        content: e.content,
-        plainText: e.plainText,
+        content: JSON.parse(e.content) as JSONContent,
+        plainText: e.plainText || '',
         _creationTime: e._creationTime,
       }))
     : localEntries.map(localToUnified);
@@ -171,9 +177,11 @@ export function useEntries(isAuthenticated: boolean) {
  */
 export function useEntry(entryId: string | undefined, isAuthenticated: boolean) {
   // Convex query (only used when authenticated)
-  const convexEntry = useQuery(
-    api.entries.getEntry,
-    isAuthenticated && entryId ? { id: entryId as Id<"entries"> } : "skip"
+  const { data: convexEntry } = useQuery(
+    convexQuery(
+      api.entries.getEntry,
+      isAuthenticated && entryId ? { id: entryId as Id<"entries"> } : "skip"
+    )
   );
 
   // Local storage state (only used when not authenticated)
@@ -195,8 +203,8 @@ export function useEntry(entryId: string | undefined, isAuthenticated: boolean) 
       ? {
           _id: convexEntry._id,
           entryDate: convexEntry.entryDate,
-          content: convexEntry.content,
-          plainText: convexEntry.plainText,
+          content: JSON.parse(convexEntry.content) as JSONContent,
+          plainText: convexEntry.plainText || '',
           _creationTime: convexEntry._creationTime,
         }
       : convexEntry === null

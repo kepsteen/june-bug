@@ -1,6 +1,6 @@
-import { useMutation } from 'convex/react'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query'
 import { api } from '@convex/_generated/api'
-import { useQuery } from 'convex/react'
 import {
   AddTodoForm,
   TodoListContainer,
@@ -13,10 +13,16 @@ import {
 } from '@/components/server'
 
 export const TodoList = () => {
-  const todos = useQuery(api.todos.get) ?? []
-  const create = useMutation(api.todos.create)
-  const toggle = useMutation(api.todos.toggle)
-  const remove = useMutation(api.todos.remove)
+  const { data: todos = [] } = useQuery(convexQuery(api.todos.get, {}))
+  const { mutateAsync: create } = useMutation({
+    mutationFn: useConvexMutation(api.todos.create),
+  })
+  const { mutateAsync: toggle } = useMutation({
+    mutationFn: useConvexMutation(api.todos.toggle),
+  })
+  const { mutateAsync: remove } = useMutation({
+    mutationFn: useConvexMutation(api.todos.remove),
+  })
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
