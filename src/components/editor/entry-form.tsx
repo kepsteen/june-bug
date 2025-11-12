@@ -83,13 +83,13 @@ export function EntryForm({
   const initialContentRef = useRef(
     typeof initialContent === 'string'
       ? initialContent
-      : JSON.stringify(initialContent)
+      : JSON.stringify(initialContent),
   )
 
   // Use unified entry hook for updates
   const { updateEntry: updateEntryMutation } = useEntries(isAuthenticated)
 
-  const { setValue, watch } = useForm<EntryFormValues>({
+  const { setValue } = useForm<EntryFormValues>({
     resolver: zodResolver(entryFormSchema),
     defaultValues: {
       content:
@@ -99,18 +99,38 @@ export function EntryForm({
     },
   })
 
-  const content = watch('content')
+  // Extract plain text from TipTap JSON for search/AI
+  const extractPlainText = (jsonContent: string): string => {
+    try {
+      const parsed = JSON.parse(jsonContent)
+      const extractText = (node: any): string => {
+        if (node.type === 'text') {
+          return node.text || ''
+        }
+        if (node.content) {
+          return node.content.map(extractText).join(' ')
+        }
+        return ''
+      }
+      return extractText(parsed).trim()
+    } catch {
+      return ''
+    }
+  }
 
   // Debounced save function
   const debouncedSave = useDebouncedCallback(
     async (values: Partial<EntryFormValues>) => {
       setIsSaving(true)
       try {
-        // Parse JSON content if present
+        // Parse JSON content and extract plain text in a single operation
         const updates: { content?: JSONContent; plainText?: string } = {}
         if (values.content) {
           try {
             updates.content = JSON.parse(values.content)
+            // Extract plain text from the same content for search/AI
+            // Backend will automatically trigger AI title generation when word count >= 100
+            updates.plainText = extractPlainText(values.content)
           } catch {
             console.error('Failed to parse content JSON')
           }
@@ -155,45 +175,6 @@ export function EntryForm({
     [setValue, debouncedSave],
   )
 
-  // Extract plain text from TipTap JSON for search/AI
-  const extractPlainText = (jsonContent: string): string => {
-    try {
-      const parsed = JSON.parse(jsonContent)
-      const extractText = (node: any): string => {
-        if (node.type === 'text') {
-          return node.text || ''
-        }
-        if (node.content) {
-          return node.content.map(extractText).join(' ')
-        }
-        return ''
-      }
-      return extractText(parsed).trim()
-    } catch {
-      return ''
-    }
-  }
-
-  // Update plain text whenever content changes (only if different from initial)
-  useEffect(() => {
-    // Only update plain text if content has changed from initial value
-    if (content && content !== initialContentRef.current) {
-      const plainText = extractPlainText(content)
-      if (plainText) {
-        // Verify we're still on the same entry before saving
-        const currentEntryId = entryIdRef.current
-        // Save plain text separately (no need to debounce again)
-        // Backend will automatically trigger AI title generation when word count >= 100
-        updateEntryMutation(currentEntryId, { plainText }).catch((error) => {
-          // Only log error if we're still on the same entry
-          if (entryIdRef.current === currentEntryId) {
-            console.error('Failed to update plain text:', error)
-          }
-        })
-      }
-    }
-  }, [content, updateEntryMutation])
-
   // Notify parent when dirty state changes
   useEffect(() => {
     onDirtyChange?.(isDirty)
@@ -208,14 +189,12 @@ export function EntryForm({
   }, [entryId, debouncedSave])
 
   return (
-    <div className="flex flex-col gap-4 px-40 py-4 w-full">
+    <div className="flex flex-col gap-2 px-40 py-4 w-full relative">
       {/* Date Display */}
       <div className="text-2xl font-bold text-foreground mb-1">
         {formatEntryDate(entryDate)}
       </div>
-
-      {/* Save Status */}
-      <div className="text-sm text-muted-foreground mb-2">
+      <div className="text-sm text-muted-foreground mb-2 min-h-[20px] absolute top-4 right-10">
         {isSaving && <span>Saving...</span>}
         {!isSaving && lastSaved && (
           <span>
@@ -227,7 +206,6 @@ export function EntryForm({
           </span>
         )}
       </div>
-
       {/* Editor */}
       <TiptapEditor
         initialContent={

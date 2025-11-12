@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import type { JSONContent } from "@tiptap/core";
 import { api } from "../../convex/_generated/api";
@@ -39,6 +39,8 @@ function localToUnified(local: LocalEntry): UnifiedEntry {
  * Hook to manage entries with automatic routing between local storage and Convex
  */
 export function useEntries(isAuthenticated: boolean) {
+  const queryClient = useQueryClient();
+
   // Convex queries and mutations (only used when authenticated)
   const { data: convexEntries } = useQuery(
     convexQuery(api.entries.getEntries, isAuthenticated ? {} : "skip")
@@ -48,6 +50,56 @@ export function useEntries(isAuthenticated: boolean) {
   });
   const { mutateAsync: convexUpdateEntry } = useMutation({
     mutationFn: useConvexMutation(api.entries.updateEntry),
+    onMutate: async (variables: {
+      id: Id<"entries">;
+      content?: string;
+      plainText?: string;
+    }) => {
+      // Cancel any outgoing refetches to prevent them from overwriting our optimistic update
+      await queryClient.cancelQueries({
+        queryKey: convexQuery(api.entries.getEntry, {
+          id: variables.id,
+        }).queryKey,
+      });
+
+      // Snapshot the previous value for rollback on error
+      const previousEntry = queryClient.getQueryData(
+        convexQuery(api.entries.getEntry, { id: variables.id }).queryKey
+      );
+
+      // Optimistically update the single entry cache
+      queryClient.setQueryData(
+        convexQuery(api.entries.getEntry, { id: variables.id }).queryKey,
+        (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            content: variables.content ?? old.content,
+            plainText: variables.plainText ?? old.plainText,
+          };
+        }
+      );
+
+      return { previousEntry };
+    },
+    onError: (err, variables, context) => {
+      // Rollback to previous value on error
+      if (context?.previousEntry) {
+        queryClient.setQueryData(
+          convexQuery(api.entries.getEntry, { id: variables.id }).queryKey,
+          context.previousEntry
+        );
+      }
+    },
+    onSettled: (data, error, variables) => {
+      // Refetch to ensure we're in sync with server
+      // This happens after the mutation completes, preventing race conditions
+      queryClient.invalidateQueries({
+        queryKey: convexQuery(api.entries.getEntry, {
+          id: variables.id,
+        }).queryKey,
+      });
+    },
   });
   const { mutateAsync: convexDeleteEntry } = useMutation({
     mutationFn: useConvexMutation(api.entries.deleteEntry),

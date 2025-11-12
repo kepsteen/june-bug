@@ -9,7 +9,7 @@ import TaskItem from '@tiptap/extension-task-item'
 import Code from '@tiptap/extension-code'
 import { EditorBubbleMenu } from './editor-bubble-menu'
 import { SlashCommand, getSuggestionItems, renderItems } from './slash-command'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface TiptapEditorProps {
   initialContent: string
@@ -17,6 +17,13 @@ interface TiptapEditorProps {
 }
 
 export function TiptapEditor({ initialContent, onUpdate }: TiptapEditorProps) {
+  // Track editor state version to prevent stale updates from overwriting in-flight typing
+  const editorVersionRef = useRef(0)
+  const propVersionRef = useRef(0)
+
+  // Track focus state to prevent content resets while user is actively typing
+  const [isFocused, setIsFocused] = useState(false)
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -60,10 +67,15 @@ export function TiptapEditor({ initialContent, onUpdate }: TiptapEditorProps) {
     content: initialContent,
     editorProps: {
       attributes: {
-        class: 'prose prose-sm focus:outline-none w-full min-h-[500px] p-4',
+        class: 'prose prose-sm focus:outline-none w-full min-h-[500px] px-4 pt-1 pb-4',
       },
     },
+    onFocus: () => setIsFocused(true),
+    onBlur: () => setIsFocused(false),
     onUpdate: ({ editor }) => {
+      // Increment editor version when user makes changes
+      // This marks the editor state as newer than any pending prop updates
+      editorVersionRef.current = propVersionRef.current + 1
       const json = editor.getJSON()
       onUpdate(JSON.stringify(json))
     },
@@ -71,17 +83,31 @@ export function TiptapEditor({ initialContent, onUpdate }: TiptapEditorProps) {
 
   // Update editor content when initialContent changes (e.g., switching entries)
   useEffect(() => {
+    // Increment prop version to track when new data arrives from parent
+    propVersionRef.current++
+
     if (editor && initialContent) {
       try {
         const currentContent = JSON.stringify(editor.getJSON())
-        if (currentContent !== initialContent) {
+
+        // Only update editor if:
+        // 1. Content is actually different
+        // 2. Editor is not focused (user is not actively typing)
+        // 3. Prop version is newer than last user edit (prevents stale updates)
+        if (
+          currentContent !== initialContent &&
+          !isFocused &&
+          propVersionRef.current > editorVersionRef.current
+        ) {
           editor.commands.setContent(JSON.parse(initialContent))
+          // Sync editor version after applying prop update
+          editorVersionRef.current = propVersionRef.current
         }
       } catch (error) {
         console.error('Failed to parse initial content:', error)
       }
     }
-  }, [editor, initialContent])
+  }, [editor, initialContent, isFocused])
 
   if (!editor) {
     return (
