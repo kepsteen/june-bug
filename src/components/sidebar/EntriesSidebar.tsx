@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Plus, Search, User, LogIn, LogOut } from 'lucide-react'
+import { Plus, Search, User, LogIn } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, Link } from '@tanstack/react-router'
 import {
   groupEntriesByDate,
   formatEntryDate,
@@ -14,8 +14,6 @@ import type { Id } from '../../../convex/_generated/dataModel'
 import { useQueryClient } from '@tanstack/react-query'
 import { convexQuery } from '@convex-dev/react-query'
 import { api } from '../../../convex/_generated/api'
-import { authClient } from '@/lib/auth-client'
-import { toast } from 'sonner'
 
 interface EntriesSidebarProps {
   entries: Entry[]
@@ -197,32 +195,24 @@ export function EntriesSidebar({
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
       </div>
 
-      {/* Fixed container at bottom - Login button or Avatar with logout */}
+      {/* Fixed container at bottom - Login button or Avatar link to settings */}
       <div className="mt-3 bg-background">
         {isAuthenticated ? (
-          // Show avatar and logout button for authenticated users
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={user?.image || ''} alt="User avatar" />
-                <AvatarFallback className="bg-primary/10">
-                  <User className="h-5 w-5 text-primary" />
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium truncate">
-                {user?.name || 'User'}
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
-          </div>
+          // Show avatar link to settings for authenticated users
+          <Link
+            to="/settings"
+            className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors"
+          >
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={user?.image || ''} alt="User avatar" />
+              <AvatarFallback className="bg-primary/10">
+                <User className="h-5 w-5 text-primary" />
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-medium truncate">
+              {user?.name || 'User'}
+            </span>
+          </Link>
         ) : (
           // Show login button for guests
           <Button

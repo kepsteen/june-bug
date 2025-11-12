@@ -54,7 +54,7 @@ export default function SignUp() {
         },
         onSuccess: async () => {
           setLoading(false)
-          await navigate({ to: '/entries' })
+          await navigate({ to: '/onboarding' })
         },
         onError: async (ctx) => {
           setLoading(false)

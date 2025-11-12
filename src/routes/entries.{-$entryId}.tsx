@@ -78,6 +78,13 @@ function RouteComponent() {
 
   const isLoading = isLoadingEntries || isLoadingEntry
 
+  // Redirect to onboarding if authenticated but not onboarded
+  useEffect(() => {
+    if (isAuthenticated && currentUser && !currentUser.isOnboarded) {
+      navigate({ to: '/onboarding' })
+    }
+  }, [isAuthenticated, currentUser, navigate])
+
   // Migrate local entries to database when user becomes authenticated
   useEffect(() => {
     if (isAuthenticated && !hasMigrated && needsMigration()) {

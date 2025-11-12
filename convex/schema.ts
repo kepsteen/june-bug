@@ -13,6 +13,55 @@ export default defineSchema({
     isOnboarded: v.optional(v.boolean()), // Optional for existing users
     createdAt: v.optional(v.number()), // Optional for existing users
     updatedAt: v.optional(v.number()), // Optional for existing users
+
+    // Onboarding fields
+    fullName: v.optional(v.string()),
+    age: v.optional(v.number()),
+    currentRole: v.optional(v.string()),
+    experienceLevel: v.optional(v.union(
+      v.literal('Junior'),
+      v.literal('Mid-Level'),
+      v.literal('Senior'),
+      v.literal('Lead'),
+      v.literal('Principal')
+    )),
+    mentorshipStyle: v.optional(v.union(
+      v.literal('Structured'),
+      v.literal('Exploratory'),
+      v.literal('Challenge-driven'),
+      v.literal('Reflective')
+    )),
+    developmentGoals: v.optional(v.array(v.string())),
+    techStack: v.optional(v.array(v.string())),
+    workEnvironment: v.optional(v.union(
+      v.literal('Individual contributor at company'),
+      v.literal('Team lead/manager'),
+      v.literal('Freelance/consultant'),
+      v.literal('Student/bootcamp'),
+      v.literal('Career transition/job seeking'),
+      v.literal('Side projects only')
+    )),
+    journalingFrequency: v.optional(v.union(
+      v.literal('Daily'),
+      v.literal('Every other day'),
+      v.literal('Weekly'),
+      v.literal('Custom schedule')
+    )),
+    customScheduleDays: v.optional(v.array(v.union(
+      v.literal('Monday'),
+      v.literal('Tuesday'),
+      v.literal('Wednesday'),
+      v.literal('Thursday'),
+      v.literal('Friday'),
+      v.literal('Saturday'),
+      v.literal('Sunday')
+    ))),
+    journalingTime: v.optional(v.string()), // Stored as HH:MM format or preset like "End of workday"
+    notificationPreferences: v.optional(v.array(v.union(
+      v.literal('Push notifications'),
+      v.literal('Email reminders'),
+      v.literal('None')
+    ))),
   }).index('email', ['email']),
 
   // Phase 1: Journal entries for TipTap editor
