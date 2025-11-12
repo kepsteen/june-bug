@@ -80,7 +80,21 @@ export function useEntries(isAuthenticated: boolean) {
   const createEntry = useCallback(
     async (entryDate: number, content: JSONContent, plainText: string) => {
       if (isAuthenticated) {
-        return await convexCreateEntry({ entryDate, content, plainText });
+        // Stringify content for Convex mutation
+        const entryId = await convexCreateEntry({
+          entryDate,
+          content: JSON.stringify(content),
+        });
+
+        // Update with plainText if provided
+        if (plainText && entryId) {
+          await convexUpdateEntry({
+            id: entryId,
+            plainText,
+          });
+        }
+
+        return entryId;
       } else {
         const newEntry = createLocalEntry(
           new Date(entryDate),
@@ -91,7 +105,7 @@ export function useEntries(isAuthenticated: boolean) {
         return newEntry.id;
       }
     },
-    [isAuthenticated, convexCreateEntry]
+    [isAuthenticated, convexCreateEntry, convexUpdateEntry]
   );
 
   // Update entry
@@ -104,10 +118,24 @@ export function useEntries(isAuthenticated: boolean) {
       }
     ) => {
       if (isAuthenticated) {
-        await convexUpdateEntry({
-          entryId: entryId as Id<"entries">,
-          ...updates,
-        });
+        // Stringify content for Convex mutation
+        const convexUpdates: {
+          id: Id<"entries">;
+          content?: string;
+          plainText?: string;
+        } = {
+          id: entryId as Id<"entries">,
+        };
+
+        if (updates.content !== undefined) {
+          convexUpdates.content = JSON.stringify(updates.content);
+        }
+
+        if (updates.plainText !== undefined) {
+          convexUpdates.plainText = updates.plainText;
+        }
+
+        await convexUpdateEntry(convexUpdates);
       } else {
         updateLocalEntry(entryId, updates);
         setLocalEntries(getLocalEntries());
@@ -120,7 +148,7 @@ export function useEntries(isAuthenticated: boolean) {
   const deleteEntry = useCallback(
     async (entryId: string) => {
       if (isAuthenticated) {
-        await convexDeleteEntry({ entryId: entryId as Id<"entries"> });
+        await convexDeleteEntry({ id: entryId as Id<"entries"> });
       } else {
         deleteLocalEntry(entryId);
         setLocalEntries(getLocalEntries());
