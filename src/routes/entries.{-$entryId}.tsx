@@ -12,6 +12,12 @@ import { EntriesSidebar } from '@/components/sidebar/EntriesSidebar'
 import { getTodayMidnight } from '@/lib/entry-utils'
 import { useEffect, useState } from 'react'
 import { useEntries, useEntry } from '@/hooks/use-entries'
+import { useConvex } from 'convex/react'
+import {
+  migrateLocalEntriesToDatabase,
+  needsMigration,
+} from '@/lib/migrate-local-entries'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/entries/{-$entryId}')({
   component: RouteComponent,
@@ -21,6 +27,7 @@ function RouteComponent() {
   const navigate = useNavigate({ from: Route.fullPath })
   const { entryId } = Route.useParams()
   const context = Route.useRouteContext()
+  const convexClient = useConvex()
 
   // Check if user is authenticated
   const isAuthenticated = !!context.userId
@@ -37,6 +44,7 @@ function RouteComponent() {
   // State for search and dirty tracking
   const [searchTerm, setSearchTerm] = useState('')
   const [isDirty, setIsDirty] = useState(false)
+  const [hasMigrated, setHasMigrated] = useState(false)
 
   // Use unified entry hooks
   const {
@@ -51,6 +59,35 @@ function RouteComponent() {
   )
 
   const isLoading = isLoadingEntries || isLoadingEntry
+
+  // Migrate local entries to database when user becomes authenticated
+  useEffect(() => {
+    if (isAuthenticated && !hasMigrated && needsMigration()) {
+      setHasMigrated(true) // Prevent multiple migration attempts
+
+      const performMigration = async () => {
+        try {
+          const result = await migrateLocalEntriesToDatabase(convexClient)
+          if (result.success && result.migratedCount > 0) {
+            toast.success(
+              `Successfully migrated ${result.migratedCount} ${result.migratedCount === 1 ? 'entry' : 'entries'} to your account!`
+            )
+            // Reload entries to show the migrated data
+            window.location.reload()
+          } else if (!result.success) {
+            toast.error(
+              `Migration failed: ${result.failedCount} ${result.failedCount === 1 ? 'entry' : 'entries'} could not be migrated`
+            )
+          }
+        } catch (error) {
+          console.error('Migration error:', error)
+          toast.error('Failed to migrate your entries. Please try again.')
+        }
+      }
+
+      performMigration()
+    }
+  }, [isAuthenticated, hasMigrated, convexClient])
 
   // Create a temporary entry on mount if none exists
   useEffect(() => {

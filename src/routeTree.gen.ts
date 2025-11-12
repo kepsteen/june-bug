@@ -12,13 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as DisabledIndexRouteImport } from './routes/_disabled/index'
+import { Route as EntriesChar123EntryIdChar125RouteImport } from './routes/entries.{-$entryId}'
 import { Route as DisabledServerRouteImport } from './routes/_disabled/server'
 import { Route as DisabledClientOnlyRouteImport } from './routes/_disabled/client-only'
 import { Route as DisabledClientOnlyIndexRouteImport } from './routes/_disabled/client-only.index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as AuthedEntriesChar123EntryIdChar125RouteImport } from './routes/_authed/entries.{-$entryId}'
 
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
@@ -35,15 +34,17 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthedRoute = AuthedRouteImport.update({
-  id: '/_authed',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DisabledIndexRoute = DisabledIndexRouteImport.update({
   id: '/_disabled/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EntriesChar123EntryIdChar125Route =
+  EntriesChar123EntryIdChar125RouteImport.update({
+    id: '/entries/{-$entryId}',
+    path: '/entries/{-$entryId}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const DisabledServerRoute = DisabledServerRouteImport.update({
   id: '/_disabled/server',
   path: '/server',
@@ -64,12 +65,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthedEntriesChar123EntryIdChar125Route =
-  AuthedEntriesChar123EntryIdChar125RouteImport.update({
-    id: '/entries/{-$entryId}',
-    path: '/entries/{-$entryId}',
-    getParentRoute: () => AuthedRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
@@ -77,8 +72,8 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof SignUpRoute
   '/client-only': typeof DisabledClientOnlyRouteWithChildren
   '/server': typeof DisabledServerRoute
+  '/entries/{-$entryId}': typeof EntriesChar123EntryIdChar125Route
   '/': typeof DisabledIndexRoute
-  '/entries/{-$entryId}': typeof AuthedEntriesChar123EntryIdChar125Route
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/client-only/': typeof DisabledClientOnlyIndexRoute
 }
@@ -87,21 +82,20 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/server': typeof DisabledServerRoute
+  '/entries/{-$entryId}': typeof EntriesChar123EntryIdChar125Route
   '/': typeof DisabledIndexRoute
-  '/entries/{-$entryId}': typeof AuthedEntriesChar123EntryIdChar125Route
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/client-only': typeof DisabledClientOnlyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_authed': typeof AuthedRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/_disabled/client-only': typeof DisabledClientOnlyRouteWithChildren
   '/_disabled/server': typeof DisabledServerRoute
+  '/entries/{-$entryId}': typeof EntriesChar123EntryIdChar125Route
   '/_disabled/': typeof DisabledIndexRoute
-  '/_authed/entries/{-$entryId}': typeof AuthedEntriesChar123EntryIdChar125Route
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_disabled/client-only/': typeof DisabledClientOnlyIndexRoute
 }
@@ -113,8 +107,8 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/client-only'
     | '/server'
-    | '/'
     | '/entries/{-$entryId}'
+    | '/'
     | '/api/auth/$'
     | '/client-only/'
   fileRoutesByTo: FileRoutesByTo
@@ -123,31 +117,30 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/server'
-    | '/'
     | '/entries/{-$entryId}'
+    | '/'
     | '/api/auth/$'
     | '/client-only'
   id:
     | '__root__'
-    | '/_authed'
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
     | '/_disabled/client-only'
     | '/_disabled/server'
+    | '/entries/{-$entryId}'
     | '/_disabled/'
-    | '/_authed/entries/{-$entryId}'
     | '/api/auth/$'
     | '/_disabled/client-only/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AuthedRoute: typeof AuthedRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   DisabledClientOnlyRoute: typeof DisabledClientOnlyRouteWithChildren
   DisabledServerRoute: typeof DisabledServerRoute
+  EntriesChar123EntryIdChar125Route: typeof EntriesChar123EntryIdChar125Route
   DisabledIndexRoute: typeof DisabledIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -175,18 +168,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authed': {
-      id: '/_authed'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AuthedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_disabled/': {
       id: '/_disabled/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof DisabledIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entries/{-$entryId}': {
+      id: '/entries/{-$entryId}'
+      path: '/entries/{-$entryId}'
+      fullPath: '/entries/{-$entryId}'
+      preLoaderRoute: typeof EntriesChar123EntryIdChar125RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_disabled/server': {
@@ -217,27 +210,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authed/entries/{-$entryId}': {
-      id: '/_authed/entries/{-$entryId}'
-      path: '/entries/{-$entryId}'
-      fullPath: '/entries/{-$entryId}'
-      preLoaderRoute: typeof AuthedEntriesChar123EntryIdChar125RouteImport
-      parentRoute: typeof AuthedRoute
-    }
   }
 }
-
-interface AuthedRouteChildren {
-  AuthedEntriesChar123EntryIdChar125Route: typeof AuthedEntriesChar123EntryIdChar125Route
-}
-
-const AuthedRouteChildren: AuthedRouteChildren = {
-  AuthedEntriesChar123EntryIdChar125Route:
-    AuthedEntriesChar123EntryIdChar125Route,
-}
-
-const AuthedRouteWithChildren =
-  AuthedRoute._addFileChildren(AuthedRouteChildren)
 
 interface DisabledClientOnlyRouteChildren {
   DisabledClientOnlyIndexRoute: typeof DisabledClientOnlyIndexRoute
@@ -251,12 +225,12 @@ const DisabledClientOnlyRouteWithChildren =
   DisabledClientOnlyRoute._addFileChildren(DisabledClientOnlyRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  AuthedRoute: AuthedRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   DisabledClientOnlyRoute: DisabledClientOnlyRouteWithChildren,
   DisabledServerRoute: DisabledServerRoute,
+  EntriesChar123EntryIdChar125Route: EntriesChar123EntryIdChar125Route,
   DisabledIndexRoute: DisabledIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
