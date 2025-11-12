@@ -7,7 +7,7 @@ import { v } from 'convex/values'
 // The schema provides more precise TypeScript types.
 export default defineSchema({
   users: defineTable({
-    email: v.string(),
+    email: v.optional(v.string()), // Optional to support OAuth users with private emails
     authId: v.optional(v.string()),
     // Phase 1: Essential fields for journaling app
     isOnboarded: v.optional(v.boolean()), // Optional for existing users

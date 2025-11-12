@@ -28,6 +28,10 @@ interface EntriesSidebarProps {
   isCollapsed: boolean
   sidebarWidth: number
   isAuthenticated: boolean
+  user?: {
+    name?: string
+    image?: string | null
+  } | null
 }
 
 export function EntriesSidebar({
@@ -41,6 +45,7 @@ export function EntriesSidebar({
   isCollapsed,
   sidebarWidth,
   isAuthenticated,
+  user,
 }: EntriesSidebarProps) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -197,12 +202,14 @@ export function EntriesSidebar({
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarImage src="" alt="User avatar" />
+                <AvatarImage src={user?.image || ''} alt="User avatar" />
                 <AvatarFallback className="bg-primary/10">
                   <User className="h-5 w-5 text-primary" />
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm font-medium truncate">User</span>
+              <span className="text-sm font-medium truncate">
+                {user?.name || 'User'}
+              </span>
             </div>
             <Button
               variant="outline"
