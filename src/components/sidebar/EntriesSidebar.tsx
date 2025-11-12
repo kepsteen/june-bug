@@ -146,7 +146,7 @@ export function EntriesSidebar({
 
       {/* Scrollable entries area with fade gradient */}
       <div className="flex-1 relative overflow-hidden">
-        <div className="h-full overflow-y-auto pb-2">
+        <div className="h-full overflow-y-auto pb-2 scrollbar-hide">
           {/* No entries message */}
           {filteredEntries.length === 0 && (
             <div className="text-sm text-muted-foreground px-2 py-4">
