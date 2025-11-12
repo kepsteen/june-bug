@@ -20,6 +20,7 @@ export type UnifiedEntry = {
   content: JSONContent;
   plainText: string;
   _creationTime: number;
+  aiTitle?: string;
 };
 
 /**
@@ -32,6 +33,7 @@ function localToUnified(local: LocalEntry): UnifiedEntry {
     content: local.content,
     plainText: local.plainText,
     _creationTime: local.createdAt,
+    aiTitle: local.aiTitle,
   };
 }
 
@@ -126,6 +128,7 @@ export function useEntries(isAuthenticated: boolean) {
         content: JSON.parse(e.content) as JSONContent,
         plainText: e.plainText || '',
         _creationTime: e._creationTime,
+        aiTitle: e.aiTitle,
       }))
     : localEntries.map(localToUnified);
 
@@ -258,6 +261,7 @@ export function useEntry(entryId: string | undefined, isAuthenticated: boolean) 
           content: JSON.parse(convexEntry.content) as JSONContent,
           plainText: convexEntry.plainText || '',
           _creationTime: convexEntry._creationTime,
+          aiTitle: convexEntry.aiTitle,
         }
       : convexEntry === null
         ? null
