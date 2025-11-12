@@ -21,6 +21,8 @@ import {
 } from '@/lib/migrate-local-entries'
 import { toast } from 'sonner'
 import { api } from '@/../convex/_generated/api'
+import { FloatingJuneBug } from '@/components/floating-june-bug'
+import { OnboardingPromptModal } from '@/components/onboarding-prompt-modal'
 
 export const Route = createFileRoute('/entries/{-$entryId}')({
   component: RouteComponent,
@@ -51,6 +53,10 @@ function RouteComponent() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isDirty, setIsDirty] = useState(false)
   const [hasMigrated, setHasMigrated] = useState(false)
+
+  // State for June Bug animation and prompt modal
+  const [showJuneBugAnimation, setShowJuneBugAnimation] = useState(false)
+  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false)
 
   // Use unified entry hooks
   const {
@@ -132,6 +138,8 @@ function RouteComponent() {
             to: '/entries/{-$entryId}',
             params: { entryId: newEntryId as string },
           })
+          // Trigger June Bug animation after navigation
+          setShowJuneBugAnimation(true)
         }
       }
     )
@@ -145,6 +153,23 @@ function RouteComponent() {
   // Handle dirty state changes from entry form
   const handleDirtyChange = (dirty: boolean) => {
     setIsDirty(dirty)
+  }
+
+  // Handle June Bug click
+  const handleJuneBugClick = () => {
+    setIsPromptModalOpen(true)
+    // Clicking the logo stops the animation
+    setShowJuneBugAnimation(false)
+  }
+
+  // Handle animation completion
+  const handleAnimationComplete = () => {
+    setShowJuneBugAnimation(false)
+  }
+
+  // Handle prompt modal state change
+  const handlePromptModalChange = (open: boolean) => {
+    setIsPromptModalOpen(open)
   }
 
   // Protect against browser navigation (closing tab/window with unsaved changes)
@@ -290,6 +315,19 @@ function RouteComponent() {
           </div>
         </div>
       </main>
+
+      {/* Floating June Bug Logo */}
+      <FloatingJuneBug
+        shouldAnimate={showJuneBugAnimation}
+        onAnimationComplete={handleAnimationComplete}
+        onClick={handleJuneBugClick}
+      />
+
+      {/* Onboarding Prompt Modal */}
+      <OnboardingPromptModal
+        open={isPromptModalOpen}
+        onOpenChange={handlePromptModalChange}
+      />
     </div>
   )
 }
