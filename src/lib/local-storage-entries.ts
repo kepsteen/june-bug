@@ -9,6 +9,7 @@ export interface LocalEntry {
   plainText: string;
   createdAt: number; // timestamp
   updatedAt: number; // timestamp
+  aiTitle?: string;
 }
 
 /**
