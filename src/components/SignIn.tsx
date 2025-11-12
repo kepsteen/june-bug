@@ -311,12 +311,7 @@ export const SignIn = () => {
                   className="w-full"
                   disabled={otpLoading || migrationLoading}
                 >
-                  {migrationLoading ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin mr-2" />
-                      Migrating your entries...
-                    </>
-                  ) : otpLoading ? (
+                  {otpLoading || migrationLoading ? (
                     <>
                       <Loader2 size={16} className="animate-spin mr-2" />
                       Signing in...
