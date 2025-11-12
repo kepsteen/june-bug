@@ -54,20 +54,20 @@ export function EntriesSidebar({
   // Group entries by date
   const groupedEntries = groupEntriesByDate(filteredEntries)
 
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await authClient.signOut()
-      toast.success(
-        'Logged out successfully. You can continue using the app offline.',
-      )
-      // Reload the page to reset auth state and switch to local storage mode
-      window.location.href = '/entries'
-    } catch (error) {
-      console.error('Logout failed:', error)
-      toast.error('Failed to log out. Please try again.')
-    }
-  }
+  // // Handle logout
+  // const handleLogout = async () => {
+  //   try {
+  //     await authClient.signOut()
+  //     toast.success(
+  //       'Logged out successfully. You can continue using the app offline.',
+  //     )
+  //     // Reload the page to reset auth state and switch to local storage mode
+  //     window.location.href = '/entries'
+  //   } catch (error) {
+  //     console.error('Logout failed:', error)
+  //     toast.error('Failed to log out. Please try again.')
+  //   }
+  // }
 
   // Prefetch entry data on hover for instant switching (only for authenticated users)
   const prefetchEntry = (entryId: string) => {
