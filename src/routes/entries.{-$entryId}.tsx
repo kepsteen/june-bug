@@ -12,12 +12,13 @@ import { EntriesSidebar } from '@/components/sidebar/EntriesSidebar'
 import { getTodayMidnight } from '@/lib/entry-utils'
 import { useEffect, useState } from 'react'
 import { useEntries, useEntry } from '@/hooks/use-entries'
-import { useConvex } from 'convex/react'
+import { useConvex, useQuery } from 'convex/react'
 import {
   migrateLocalEntriesToDatabase,
   needsMigration,
 } from '@/lib/migrate-local-entries'
 import { toast } from 'sonner'
+import { api } from '@/../convex/_generated/api'
 
 export const Route = createFileRoute('/entries/{-$entryId}')({
   component: RouteComponent,
@@ -31,6 +32,9 @@ function RouteComponent() {
 
   // Check if user is authenticated
   const isAuthenticated = !!context.userId
+
+  // Get current user data (name and image from better-auth)
+  const currentUser = useQuery(api.auth.getCurrentUser)
 
   const {
     sidebarWidth,
@@ -209,6 +213,7 @@ function RouteComponent() {
         isCollapsed={isCollapsed}
         sidebarWidth={sidebarWidth}
         isAuthenticated={isAuthenticated}
+        user={currentUser}
       />
 
       {/* Resize Handle */}

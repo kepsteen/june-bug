@@ -1,3 +1,5 @@
+import { github } from 'better-auth/social-providers'
+
 export default {
   providers: [
     {

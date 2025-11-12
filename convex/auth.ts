@@ -40,23 +40,39 @@ export const authComponent = createClient<DataModel, typeof betterAuthSchema>(
     triggers: {
       user: {
         onCreate: async (ctx, authUser) => {
+          console.log('onCreate trigger fired for user:', authUser._id)
           const now = Date.now()
-          const userId = await ctx.db.insert('users', {
-            email: authUser.email,
-            isOnboarded: false,
-            createdAt: now,
-            updatedAt: now,
-          })
-          await authComponent.setUserId(ctx, authUser._id, userId)
+
+          // Handle missing or empty email from OAuth providers (e.g., GitHub private emails)
+          const email = authUser.email || `user-${authUser._id}@placeholder.local`
+
+          try {
+            const userId = await ctx.db.insert('users', {
+              email,
+              isOnboarded: false,
+              createdAt: now,
+              updatedAt: now,
+            })
+            console.log('Successfully created user in users table:', userId)
+            await authComponent.setUserId(ctx, authUser._id, userId)
+            console.log('Successfully linked auth user to app user')
+          } catch (error) {
+            console.error('Failed to create user in onCreate trigger:', error)
+            console.error('authUser data:', { id: authUser._id, email: authUser.email, name: authUser.name })
+            throw error // Re-throw to prevent silent failure
+          }
         },
         onUpdate: async (ctx, newUser, oldUser) => {
           if (oldUser.email === newUser.email) {
             return
           }
-          await ctx.db.patch(newUser.userId as Id<'users'>, {
-            email: newUser.email,
-            updatedAt: Date.now(),
-          })
+          // Only update email if userId exists (user was properly created)
+          if (newUser.userId) {
+            await ctx.db.patch(newUser.userId as Id<'users'>, {
+              email: newUser.email || undefined,
+              updatedAt: Date.now(),
+            })
+          }
         },
         onDelete: async (ctx, authUser) => {
           const user = await ctx.db.get(authUser.userId as Id<'users'>)
@@ -112,24 +128,24 @@ export const createAuth = (
         })
       },
     },
-    // socialProviders: {
-    //   ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
-    //     ? {
-    //         github: {
-    //           clientId: process.env.GITHUB_CLIENT_ID,
-    //           clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    //         },
-    //       }
-    //     : {}),
-    //   ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-    //     ? {
-    //         google: {
-    //           clientId: process.env.GOOGLE_CLIENT_ID,
-    //           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    //         },
-    //       }
-    //     : {}),
-    // },
+    socialProviders: {
+      ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+        ? {
+            github: {
+              clientId: process.env.GITHUB_CLIENT_ID,
+              clientSecret: process.env.GITHUB_CLIENT_SECRET,
+            },
+          }
+        : {}),
+      //   ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      //     ? {
+      //         google: {
+      //           clientId: process.env.GOOGLE_CLIENT_ID,
+      //           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      //         },
+      //       }
+      //     : {}),
+    },
     user: {
       deleteUser: {
         enabled: true,

@@ -113,22 +113,22 @@ export const SignIn = () => {
   //   )
   // }
 
-  // const handleGithubSignIn = async () => {
-  //   await authClient.signIn.social(
-  //     {
-  //       provider: 'github',
-  //     },
-  //     {
-  //       onRequest: () => {
-  //         setOtpLoading(true)
-  //       },
-  //       onResponse: () => setOtpLoading(false),
-  //       onError: (ctx) => {
-  //         alert(ctx.error.message)
-  //       },
-  //     },
-  //   )
-  // }
+  const handleGithubSignIn = async () => {
+    await authClient.signIn.social(
+      {
+        provider: 'github',
+      },
+      {
+        onRequest: () => {
+          setOtpLoading(true)
+        },
+        onResponse: () => setOtpLoading(false),
+        onError: (ctx) => {
+          alert(ctx.error.message)
+        },
+      },
+    )
+  }
 
   // const handleGoogleSignIn = async () => {
   //   await authClient.signIn.social(
@@ -278,11 +278,7 @@ export const SignIn = () => {
 
             <div className="flex flex-col gap-2">
               {signInMethod === 'password' && (
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={otpLoading}
-                >
+                <Button type="submit" className="w-full" disabled={otpLoading}>
                   {otpLoading ? (
                     <>
                       <Loader2 size={16} className="animate-spin mr-2" />
@@ -382,7 +378,7 @@ export const SignIn = () => {
               </div>
             </div> */}
 
-            {/* <Button
+            <Button
               type="button"
               variant="outline"
               className="w-full gap-2"
@@ -401,7 +397,7 @@ export const SignIn = () => {
                 />
               </svg>
               Sign in with Github
-            </Button> */}
+            </Button>
 
             {/* <Button
               type="button"
