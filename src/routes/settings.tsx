@@ -10,6 +10,7 @@ import { User, ArrowLeft, LogOut } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
 import { toast } from 'sonner'
 import { useNavigate } from '@tanstack/react-router'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export const Route = createFileRoute('/settings')({
   beforeLoad: async ({ context }) => {
@@ -67,6 +68,21 @@ function RouteComponent() {
           Back to entries
         </Link>
 
+        {/* Header with theme toggle and sign out */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">Settings</h1>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-6">
           {/* Left Column - User Info */}
           <div className="space-y-6">
@@ -121,18 +137,6 @@ function RouteComponent() {
                     )}
                   </div>
                 )}
-
-                {/* Sign out button */}
-                <div className="pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </div>
