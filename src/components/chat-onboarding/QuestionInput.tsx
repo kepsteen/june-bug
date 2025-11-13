@@ -181,11 +181,14 @@ export function QuestionInput({
   };
 
   return (
-    <div className="space-y-4 px-16 md:px-24 py-3">
-      {renderInput()}
-      <Button onClick={onSubmit} disabled={!isValid} className="w-full">
-        Continue
-      </Button>
+    <div className="space-y-4 py-3">
+      {/* Add left padding to account for avatar (40px) + gap (8px) + container padding (64px mobile, 96px desktop) */}
+      <div className="pl-[112px] pr-16 md:pl-[144px] md:pr-24">
+        {renderInput()}
+        <Button onClick={onSubmit} disabled={!isValid} className="w-full mt-4">
+          Continue
+        </Button>
+      </div>
     </div>
   );
 }

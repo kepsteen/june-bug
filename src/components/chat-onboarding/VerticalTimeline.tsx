@@ -13,13 +13,13 @@ interface VerticalTimelineProps {
 
 export function VerticalTimeline({ steps }: VerticalTimelineProps) {
   return (
-    <div className="flex flex-col gap-1 py-4">
+    <div className="flex flex-col py-4">
       {steps.map((step, index) => (
-        <div key={step.id} className="flex items-center gap-3">
+        <div key={step.id} className="flex gap-3">
           {/* Timeline indicator */}
           <div className="flex flex-col items-center">
             <motion.div
-              className={`w-3 h-3 rounded-full border-2 ${
+              className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${
                 step.completed
                   ? 'bg-primary border-primary'
                   : step.current
@@ -32,7 +32,7 @@ export function VerticalTimeline({ steps }: VerticalTimelineProps) {
             />
             {index < steps.length - 1 && (
               <div
-                className={`w-0.5 h-8 ${
+                className={`w-0.5 flex-1 ${
                   step.completed ? 'bg-primary' : 'bg-muted'
                 }`}
               />
@@ -41,7 +41,7 @@ export function VerticalTimeline({ steps }: VerticalTimelineProps) {
 
           {/* Step label */}
           <motion.div
-            className={`text-xs ${
+            className={`text-xs pb-8 -mt-0.5 ${
               step.completed || step.current
                 ? 'text-foreground font-medium'
                 : 'text-muted-foreground'
