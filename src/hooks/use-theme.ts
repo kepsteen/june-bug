@@ -1,39 +1,18 @@
-import { useState, useEffect, useCallback } from 'react'
-
-type Theme = 'light' | 'dark'
+import { useContext, useCallback } from 'react'
+import { ThemeContext } from '../contexts/theme-context'
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>('light')
+  const context = useContext(ThemeContext)
 
-  // Load saved theme from localStorage and apply it
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme | null
-    const initialTheme = savedTheme || 'light'
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider')
+  }
 
-    setTheme(initialTheme)
-
-    // Apply theme to document root
-    if (initialTheme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [])
-
-  // Save theme to localStorage and apply it when it changes
-  useEffect(() => {
-    localStorage.setItem('theme', theme)
-
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [theme])
+  const { theme, setTheme } = context
 
   const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
-  }, [])
+    setTheme(theme === 'light' ? 'dark' : 'light')
+  }, [theme, setTheme])
 
   return {
     theme,

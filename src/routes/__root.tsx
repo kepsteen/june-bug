@@ -22,6 +22,7 @@ import { getCookie, getRequest } from '@tanstack/react-start/server'
 import { seo } from '@/utils/seo'
 import { ConvexQueryClient } from '@convex-dev/react-query'
 import { createServerFn } from '@tanstack/react-start'
+import { ThemeProvider } from '@/contexts/theme-context'
 
 // Get auth information for SSR using available cookies
 const fetchAuth = createServerFn({ method: 'GET' }).handler(async () => {
@@ -97,21 +98,23 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
-        <TanStackDevtools
-          plugins={[
-            {
-              name: 'TanStack Query',
-              render: <ReactQueryDevtoolsPanel />,
-              defaultOpen: true,
-            },
-            {
-              name: 'TanStack Router',
-              render: <TanStackRouterDevtoolsPanel />,
-              defaultOpen: false,
-            },
-          ]}
-        />
+        <ThemeProvider>
+          {children}
+          <TanStackDevtools
+            plugins={[
+              {
+                name: 'TanStack Query',
+                render: <ReactQueryDevtoolsPanel />,
+                defaultOpen: true,
+              },
+              {
+                name: 'TanStack Router',
+                render: <TanStackRouterDevtoolsPanel />,
+                defaultOpen: false,
+              },
+            ]}
+          />
+        </ThemeProvider>
         <Scripts />
       </body>
     </html>
