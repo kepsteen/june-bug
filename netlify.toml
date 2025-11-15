@@ -1,6 +1,12 @@
 [build]
   command = "npm run build"
 
+[context.deploy-preview]
+  command = "npm run build:preview"
+
+[context.branch-deploy]
+  command = "npm run build:preview"
+
 [dev]
   command = "npm run dev:web"
   port = 3000

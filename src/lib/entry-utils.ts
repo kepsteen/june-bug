@@ -7,8 +7,25 @@ import {
   isSameYear,
 } from 'date-fns'
 import type { Doc } from '../../convex/_generated/dataModel'
+import type { JSONContent } from '@tiptap/core'
 
 export type Entry = Doc<'entries'>
+
+/**
+ * Extracts plain text from TipTap JSON content
+ */
+export function extractPlainTextFromContent(content: JSONContent): string {
+  const extractText = (node: any): string => {
+    if (node.type === 'text') {
+      return node.text || ''
+    }
+    if (node.content) {
+      return node.content.map(extractText).join(' ')
+    }
+    return ''
+  }
+  return extractText(content).trim()
+}
 
 export interface GroupedEntries {
   last7Days: Entry[]
@@ -82,7 +99,8 @@ export function formatEntryDate(timestamp: number): string {
 }
 
 /**
- * Filters entries by search term (searches in plainText field)
+ * Filters entries by search term (searches in plainText and aiTitle fields)
+ * Falls back to extracting text from content if plainText is not available
  */
 export function filterEntriesBySearch(
   entries: Entry[],
@@ -93,7 +111,31 @@ export function filterEntriesBySearch(
   }
 
   const lowerSearch = searchTerm.toLowerCase()
-  return entries.filter((entry) =>
-    entry.plainText?.toLowerCase().includes(lowerSearch),
-  )
+  return entries.filter((entry) => {
+    // Search in aiTitle
+    if (entry.aiTitle?.toLowerCase().includes(lowerSearch)) {
+      return true
+    }
+
+    // Search in plainText if available
+    if (entry.plainText?.toLowerCase().includes(lowerSearch)) {
+      return true
+    }
+
+    // Fallback: extract plain text from content if plainText is not available
+    if (!entry.plainText && entry.content) {
+      try {
+        const content =
+          typeof entry.content === 'string'
+            ? JSON.parse(entry.content)
+            : entry.content
+        const extractedText = extractPlainTextFromContent(content)
+        return extractedText.toLowerCase().includes(lowerSearch)
+      } catch {
+        return false
+      }
+    }
+
+    return false
+  })
 }

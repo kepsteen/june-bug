@@ -24,6 +24,8 @@ import {
 import { toast } from 'sonner'
 import { api } from '@/../convex/_generated/api'
 import { FloatingJuneBug } from '@/components/floating-june-bug'
+import { SearchCommandMenu } from '@/components/search-command-menu'
+import { useSearchCommand } from '@/hooks/use-search-command'
 
 export const Route = createFileRoute('/entries/{-$entryId}')({
   component: RouteComponent,
@@ -54,6 +56,9 @@ function RouteComponent() {
     isCollapsed: rightSidebarCollapsed,
     toggleCollapse: toggleRightSidebar,
   } = useCollapsibleRightSidebar()
+
+  // Search command menu state
+  const { open: searchCommandOpen, setOpen: setSearchCommandOpen } = useSearchCommand()
 
   // State for search and dirty tracking
   const [searchTerm, setSearchTerm] = useState('')
@@ -228,10 +233,20 @@ function RouteComponent() {
           >
             <PanelLeft className="h-3 w-3" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setSearchCommandOpen(true)}
+          >
             <Search className="h-3 w-3" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleNewEntry}
+          >
             <Plus className="h-3 w-3" />
           </Button>
         </div>
@@ -361,6 +376,14 @@ function RouteComponent() {
         onCategorySelect={handleCategorySelect}
         onBack={handleBackToCategories}
         onClose={handleClosePrompts}
+      />
+
+      {/* Search Command Menu */}
+      <SearchCommandMenu
+        entries={entries || []}
+        onSelectEntry={handleSelectEntry}
+        open={searchCommandOpen}
+        onOpenChange={setSearchCommandOpen}
       />
 
       {/* Floating June Bug Logo */}
