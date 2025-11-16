@@ -1,0 +1,207 @@
+EDITOR COMPONENT HIERARCHY & DEPENDENCIES
+==========================================
+
+entries.{-$entryId}.tsx (Route Component)
+│
+├─ SIDEBAR SECTION
+│  └─ EntriesSidebar.tsx
+│     ├─ Uses: useNavigate(), useQueryClient()
+│     ├─ Imports: Button, Input, Avatar, Badge from /ui
+│     ├─ Shows: Logo, New Entry button, Search input, Entry list grouped by date
+│     ├─ Displays: User avatar and Sign Out button (authenticated)
+│     └─ Feature: Prefetches entry data on hover for instant switching
+│
+├─ MAIN EDITOR SECTION  
+│  ├─ EntryForm.tsx (Props: entryId, initialTitle, initialContent, entryDate, onDirtyChange)
+│  │  │
+│  │  ├─ Uses: useForm (React Hook Form), useDebouncedCallback
+│  │  ├─ Uses: useEntries hook for mutations
+│  │  │
+│  │  ├─ METADATA SECTION
+│  │  │  ├─ Date Display: formatEntryDate() → "Fri, May 5th, 2023"
+│  │  │  └─ Save Status: "Saving..." or "Last saved 3:45 PM"
+│  │  │
+│  │  └─ EDITOR WRAPPER
+│  │     └─ TiptapEditor.tsx (Props: initialContent, onUpdate)
+│  │        │
+│  │        ├─ TIPTAP CONFIGURATION
+│  │        │  ├─ Extensions:
+│  │        │  │  ├─ StarterKit (headings, bold, italic, lists)
+│  │        │  │  ├─ Code (inline code highlighting)
+│  │        │  │  ├─ Underline
+│  │        │  │  ├─ Link
+│  │        │  │  ├─ Image
+│  │        │  │  ├─ TaskList / TaskItem (checkboxes)
+│  │        │  │  ├─ Placeholder ("Type "/" for commands...")
+│  │        │  │  └─ SlashCommand
+│  │        │  │
+│  │        │  ├─ Smart Content Sync
+│  │        │  │  ├─ Tracks: editorVersion vs propVersion
+│  │        │  │  ├─ Detects: User focus state
+│  │        │  │  └─ Prevents: Stale updates overwriting user typing
+│  │        │  │
+│  │        │  └─ Styling: prose prose-sm, min-h-[500px], dark mode support
+│  │        │
+│  │        ├─ EditorBubbleMenu.tsx
+│  │        │  ├─ Trigger: Text selection
+│  │        │  ├─ Position: Floating near cursor
+│  │        │  ├─ Buttons: Bold, Italic, Underline, Strikethrough, Code
+│  │        │  ├─ Styling: rounded-lg border shadow-md
+│  │        │  └─ Active State: bg-muted text-primary
+│  │        │
+│  │        └─ SlashCommand System
+│  │           │
+│  │           ├─ SlashCommand.tsx (TipTap Extension)
+│  │           │  ├─ Trigger: "/" character
+│  │           │  ├─ Filtering: By command title (startsWith)
+│  │           │  ├─ Navigation: Arrow keys, Enter to execute
+│  │           │  └─ Rendering: Uses Tippy.js for positioning
+│  │           │
+│  │           └─ SlashCommandList.tsx (React UI)
+│  │              ├─ Size: max-h-80vh width-72
+│  │              ├─ Keyboard: Up/Down/Enter handling
+│  │              ├─ Selection: Highlight on hover/keyboard
+│  │              └─ Commands (11 total):
+│  │                 ├─ Text, Heading 1/2/3
+│  │                 ├─ Bullet List, Numbered List, Task List
+│  │                 ├─ Code Block, Inline Code
+│  │                 ├─ Quote, Divider
+│  │                 └─ [Potential]: Ask AI (new)
+│  │
+│  └─ UI COMPONENT IMPORTS
+│     ├─ Button - CVA variants (default|destructive|outline|secondary|ghost|link)
+│     ├─ Input - Tailwind-styled text input
+│     ├─ Avatar - Radix UI avatar with fallback
+│     ├─ Badge - Label badge component
+│     └─ Dialog - Radix UI dialog (for future prompts modal)
+│
+├─ HEADER CONTROLS
+│  ├─ PanelLeft button - Toggle sidebar collapse
+│  ├─ Search button - Entry search
+│  ├─ Plus button - New entry
+│  └─ ThemeToggle - Dark/light mode
+│
+└─ LAYOUT SYSTEM
+   ├─ Resizable sidebar (mouse drag divider)
+   ├─ Smooth transitions (300ms)
+   ├─ Responsive button grouping when collapsed
+   ├─ Notch design between sidebar and content
+   └─ Scrollable main content area
+
+
+DATA FLOW
+=========
+
+Editor Content Changes:
+  TiptapEditor.onUpdate({editor})
+    → getJSON() and stringify
+    → EntryForm.handleContentUpdate()
+    → Validate: newContent !== initialContent
+    → Extract plainText (for search/AI)
+    → debouncedSave (1s debounce, 2s max wait)
+    → updateEntry mutation
+    → Convex backend
+
+Backend Processing (on plainText save):
+  updateEntry mutation
+    → Count words in plainText
+    → If >= 100 words: Schedule generateEntryTitle action
+    → (Async, non-blocking)
+    → OpenAI GPT-3.5-turbo generates title (max 8 words)
+    → Store in aiTitle field
+    → Frontend syncs via React Query
+
+Display in Sidebar:
+  EntriesSidebar renders entry list
+    → For each entry: displayText = aiTitle || formatEntryDate(entryDate)
+    → Example: "Morning reflections on growth" vs "May 5th"
+    → Click entry → Navigate to /entries/{entryId}
+    → useEntry hook fetches full entry data
+    → EntryForm loads with parsed JSON
+
+
+STYLING & THEMING
+=================
+
+Global Styles:
+  /src/styles/app.css
+    ├─ CSS Variables (OKLch color space)
+    ├─ Light mode colors
+    ├─ Dark mode colors
+    ├─ Animations (blob, fade, zoom)
+    ├─ Font families (Nunito, PT Serif, JetBrains Mono)
+    └─ Shadow utilities
+
+Editor Styles:
+  /src/styles/tiptap.css
+    ├─ .tiptap-wrapper - Transparent background
+    ├─ .tiptap-editor - Prose styling
+    ├─ Heading styles (h1-h6 with custom sizes)
+    ├─ List styling (ul, ol, task lists)
+    ├─ Code styling (inline and blocks)
+    ├─ Link styling (primary color, underline)
+    ├─ Dark mode overrides
+    ├─ Selection styling
+    └─ Tippy.js popover styling
+
+
+EXISTING DIALOG EXAMPLE
+=======================
+
+Dialog component is fully ready but NOT YET USED in editor UI.
+
+Basic usage:
+  <Dialog>
+    <DialogTrigger asChild>
+      <Button>Open Modal</Button>
+    </DialogTrigger>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Title</DialogTitle>
+        <DialogDescription>Description</DialogDescription>
+      </DialogHeader>
+      {/* Content */}
+      <DialogFooter>
+        <Button>Action</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+
+Styling:
+  - Centered on screen
+  - Semi-transparent backdrop (black 50%)
+  - Smooth fade-in/zoom animations
+  - Automatic close button (X button, top-right)
+  - Responsive width (max 100% - 2rem)
+
+
+INTEGRATION POINTS FOR PROMPT UI
+=================================
+
+Option 1: Slash Command
+  - Add new command to slashCommands array
+  - Command opens Dialog with prompt input
+  - User writes prompt, clicks "Ask AI"
+  - Backend processes with selected text/entry as context
+  - Results display in modal or below
+
+Option 2: Bubble Menu Button
+  - Add button to EditorBubbleMenu
+  - Appears when text selected
+  - Opens Dialog with prompt
+  - Uses selected text as context
+  - Results inline or in modal
+
+Option 3: Entry Header Button
+  - Add "Ask AI" button above editor
+  - Opens Dialog with preset/custom prompt
+  - Sends entire entry text to AI
+  - Results display in expandable section below
+
+Backend Ready:
+  - /convex/ai.ts already set up for AI actions
+  - @ai-sdk/openai configured
+  - OpenAI API keys available
+  - Scheduler ready for async operations
+  - Text extraction utilities in place
+
