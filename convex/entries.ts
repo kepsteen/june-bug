@@ -337,6 +337,26 @@ export const getEntryInternal = internalQuery({
 })
 
 /**
+ * Internal query to get recent entries for AI prompt generation
+ * Bypasses user authentication since it's called from an action
+ */
+export const getRecentEntriesInternal = internalQuery({
+  args: {
+    userId: v.id('users'),
+    limit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query('entries')
+      .withIndex('userId_isActive_entryDate', (q) =>
+        q.eq('userId', args.userId).eq('isActive', true)
+      )
+      .order('desc')
+      .take(args.limit)
+  },
+})
+
+/**
  * Helper function to count words in text
  * Used for determining when to trigger AI title generation
  */
