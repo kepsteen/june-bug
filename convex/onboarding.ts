@@ -1,5 +1,6 @@
 import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
+import { internal } from './_generated/api'
 
 /**
  * Complete onboarding for a user by updating their profile with all onboarding data
@@ -84,6 +85,11 @@ export const completeOnboarding = mutation({
       notificationPreferences: args.notificationPreferences,
       isOnboarded: true,
       updatedAt: Date.now(),
+    })
+
+    // Trigger AI: Generate 8 static prompts (2 per type) for the new user
+    await ctx.scheduler.runAfter(0, internal.ai.prompts.generateStaticPrompts, {
+      userId: args.userId,
     })
 
     return { success: true }

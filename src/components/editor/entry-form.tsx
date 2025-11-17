@@ -1,9 +1,9 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { TiptapEditor } from './tiptap-editor'
+import { TiptapEditor, type TiptapEditorHandle } from './tiptap-editor'
 import { toast } from 'sonner'
-import { useEffect, useCallback, useState, useRef } from 'react'
+import { useEffect, useCallback, useState, useRef, forwardRef, useImperativeHandle } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 import { useEntries } from '@/hooks/use-entries'
 import type { JSONContent } from '@tiptap/core'
@@ -14,12 +14,17 @@ const entryFormSchema = z.object({
 
 type EntryFormValues = z.infer<typeof entryFormSchema>
 
+export interface EntryFormHandle {
+  insertText: (text: string) => void
+}
+
 interface EntryFormProps {
   entryId: string
   initialTitle?: string
   initialContent: JSONContent | string
   entryDate: number // Timestamp of the entry
   onDirtyChange?: (isDirty: boolean) => void // Callback when dirty state changes
+  onPlainTextChange?: (plainText: string) => void // Callback when plain text changes
   isAuthenticated: boolean
   rightSidebarCollapsed: boolean
 }
@@ -66,40 +71,55 @@ function formatEntryDate(timestamp: number): string {
   return `${dayOfWeek}, ${month} ${day}${getOrdinalSuffix(day)}, ${year}`
 }
 
-export function EntryForm({
-  entryId,
-  initialTitle = 'Untitled',
-  initialContent,
-  entryDate,
-  onDirtyChange,
-  isAuthenticated,
-  rightSidebarCollapsed,
-}: EntryFormProps) {
-  const [isSaving, setIsSaving] = useState(false)
-  const [lastSaved, setLastSaved] = useState<Date | null>(null)
-  const [isDirty, setIsDirty] = useState(false)
-
-  // Track current entryId to prevent stale closures in debounced callbacks
-  const entryIdRef = useRef(entryId)
-  // Track initial values to prevent unnecessary saves
-  const initialContentRef = useRef(
-    typeof initialContent === 'string'
-      ? initialContent
-      : JSON.stringify(initialContent),
-  )
-
-  // Use unified entry hook for updates
-  const { updateEntry: updateEntryMutation } = useEntries(isAuthenticated)
-
-  const { setValue } = useForm<EntryFormValues>({
-    resolver: zodResolver(entryFormSchema),
-    defaultValues: {
-      content:
-        typeof initialContent === 'string'
-          ? initialContent
-          : JSON.stringify(initialContent),
+export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(
+  (
+    {
+      entryId,
+      initialTitle = 'Untitled',
+      initialContent,
+      entryDate,
+      onDirtyChange,
+      onPlainTextChange,
+      isAuthenticated,
+      rightSidebarCollapsed,
     },
-  })
+    ref
+  ) => {
+    const [isSaving, setIsSaving] = useState(false)
+    const [lastSaved, setLastSaved] = useState<Date | null>(null)
+    const [isDirty, setIsDirty] = useState(false)
+
+    // Ref to TiptapEditor for inserting text
+    const editorRef = useRef<TiptapEditorHandle>(null)
+
+    // Track current entryId to prevent stale closures in debounced callbacks
+    const entryIdRef = useRef(entryId)
+    // Track initial values to prevent unnecessary saves
+    const initialContentRef = useRef(
+      typeof initialContent === 'string'
+        ? initialContent
+        : JSON.stringify(initialContent),
+    )
+
+    // Use unified entry hook for updates
+    const { updateEntry: updateEntryMutation } = useEntries(isAuthenticated)
+
+    // Expose insertText method to parent via ref
+    useImperativeHandle(ref, () => ({
+      insertText: (text: string) => {
+        editorRef.current?.insertText(text)
+      },
+    }))
+
+    const { setValue } = useForm<EntryFormValues>({
+      resolver: zodResolver(entryFormSchema),
+      defaultValues: {
+        content:
+          typeof initialContent === 'string'
+            ? initialContent
+            : JSON.stringify(initialContent),
+      },
+    })
 
   // Extract plain text from TipTap JSON for search/AI
   const extractPlainText = (jsonContent: string): string => {
@@ -164,64 +184,77 @@ export function EntryForm({
     setLastSaved(null)
   }, [entryId, initialContent])
 
-  // Auto-save on content change (only if actually different from initial)
-  const handleContentUpdate = useCallback(
-    (newContent: string) => {
-      setValue('content', newContent)
-      // Only mark as dirty and save if content has actually changed
-      if (newContent !== initialContentRef.current) {
-        setIsDirty(true) // Mark as dirty when content changes
-        debouncedSave({ content: newContent })
-      }
-    },
-    [setValue, debouncedSave],
-  )
+    // Handle plain text changes for context-aware prompts
+    const handlePlainTextChange = useCallback(
+      (plainText: string) => {
+        onPlainTextChange?.(plainText)
+      },
+      [onPlainTextChange]
+    )
 
-  // Notify parent when dirty state changes
-  useEffect(() => {
-    onDirtyChange?.(isDirty)
-  }, [isDirty, onDirtyChange])
-
-  // Cancel pending saves when entryId changes or component unmounts
-  useEffect(() => {
-    return () => {
-      // Cancel any pending debounced saves to prevent stale data from being saved
-      debouncedSave.cancel()
-    }
-  }, [entryId, debouncedSave])
-
-  const horizontalPadding = rightSidebarCollapsed ? '14rem' : '4rem' // 224px : 64px
-
-  return (
-    <div
-      className="flex flex-col gap-2 py-4 w-full relative transition-[padding] duration-300 ease-in-out"
-      style={{ paddingLeft: horizontalPadding, paddingRight: horizontalPadding }}
-    >
-      {/* Date Display */}
-      <div className="text-2xl font-bold text-foreground mb-1">
-        {formatEntryDate(entryDate)}
-      </div>
-      <div className="text-sm text-muted-foreground mb-2 min-h-[20px] absolute top-4 right-10">
-        {isSaving && <span>Saving...</span>}
-        {!isSaving && lastSaved && (
-          <span>
-            Last saved{' '}
-            {lastSaved.toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </span>
-        )}
-      </div>
-      {/* Editor */}
-      <TiptapEditor
-        initialContent={
-          typeof initialContent === 'string'
-            ? initialContent
-            : JSON.stringify(initialContent)
+    // Auto-save on content change (only if actually different from initial)
+    const handleContentUpdate = useCallback(
+      (newContent: string) => {
+        setValue('content', newContent)
+        // Only mark as dirty and save if content has actually changed
+        if (newContent !== initialContentRef.current) {
+          setIsDirty(true) // Mark as dirty when content changes
+          debouncedSave({ content: newContent })
         }
-        onUpdate={handleContentUpdate}
-      />
-    </div>
-  )
-}
+      },
+      [setValue, debouncedSave],
+    )
+
+    // Notify parent when dirty state changes
+    useEffect(() => {
+      onDirtyChange?.(isDirty)
+    }, [isDirty, onDirtyChange])
+
+    // Cancel pending saves when entryId changes or component unmounts
+    useEffect(() => {
+      return () => {
+        // Cancel any pending debounced saves to prevent stale data from being saved
+        debouncedSave.cancel()
+      }
+    }, [entryId, debouncedSave])
+
+    const horizontalPadding = rightSidebarCollapsed ? '14rem' : '4rem' // 224px : 64px
+
+    return (
+      <div
+        className="flex flex-col gap-2 py-4 w-full relative transition-[padding] duration-300 ease-in-out"
+        style={{ paddingLeft: horizontalPadding, paddingRight: horizontalPadding }}
+      >
+        {/* Date Display */}
+        <div className="text-2xl font-bold text-foreground mb-1">
+          {formatEntryDate(entryDate)}
+        </div>
+        <div className="text-sm text-muted-foreground mb-2 min-h-[20px] absolute top-4 right-10">
+          {isSaving && <span>Saving...</span>}
+          {!isSaving && lastSaved && (
+            <span>
+              Last saved{' '}
+              {lastSaved.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+          )}
+        </div>
+        {/* Editor */}
+        <TiptapEditor
+          ref={editorRef}
+          initialContent={
+            typeof initialContent === 'string'
+              ? initialContent
+              : JSON.stringify(initialContent)
+          }
+          onUpdate={handleContentUpdate}
+          onPlainTextChange={handlePlainTextChange}
+        />
+      </div>
+    )
+  }
+)
+
+EntryForm.displayName = 'EntryForm'

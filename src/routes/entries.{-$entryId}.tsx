@@ -8,11 +8,11 @@ import { PanelLeft, Search, Plus } from 'lucide-react'
 import { useResizableSidebar } from '@/hooks/use-resizable-sidebar'
 import { useCollapsibleRightSidebar } from '@/hooks/use-collapsible-right-sidebar'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { EntryForm } from '@/components/editor/entry-form'
+import { EntryForm, type EntryFormHandle } from '@/components/editor/entry-form'
 import { EntriesSidebar } from '@/components/sidebar/EntriesSidebar'
-import { PromptsSidebar, type PromptCategory } from '@/components/editor/prompts-sidebar'
+import { PromptsSection } from '@/components/prompts/PromptsSection'
 import { getTodayMidnight } from '@/lib/entry-utils'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useEntries, useEntry } from '@/hooks/use-entries'
 import { useConvex } from 'convex/react'
 import { useQuery } from '@tanstack/react-query'
@@ -26,6 +26,8 @@ import { api } from '@/../convex/_generated/api'
 import { FloatingJuneBug } from '@/components/floating-june-bug'
 import { SearchCommandMenu } from '@/components/search-command-menu'
 import { useSearchCommand } from '@/hooks/use-search-command'
+import { useContextPrompts } from '@/hooks/use-context-prompts'
+import type { Id } from '@/../convex/_generated/dataModel'
 
 export const Route = createFileRoute('/entries/{-$entryId}')({
   component: RouteComponent,
@@ -65,9 +67,13 @@ function RouteComponent() {
   const [isDirty, setIsDirty] = useState(false)
   const [hasMigrated, setHasMigrated] = useState(false)
 
-  // State for June Bug animation and prompts sidebar
+  // State for June Bug animation and AI prompts
   const [showJuneBugAnimation, setShowJuneBugAnimation] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<PromptCategory | null>(null)
+  const [activePromptType, setActivePromptType] = useState('reflection')
+  const [plainTextContent, setPlainTextContent] = useState('')
+
+  // Ref to EntryForm for inserting prompts
+  const entryFormRef = useRef<EntryFormHandle>(null)
 
   // Use unified entry hooks
   const {
@@ -82,6 +88,16 @@ function RouteComponent() {
   )
 
   const isLoading = isLoadingEntries || isLoadingEntry
+
+  // Context-aware prompt generation (only when authenticated and user exists)
+  useContextPrompts({
+    userId: context.userId as Id<'users'>,
+    currentContent: plainTextContent,
+    activePromptType,
+    enabled: isAuthenticated && !!context.userId && !rightSidebarCollapsed,
+    debounceMs: 2000,
+    minLength: 150,
+  })
 
   // Redirect to onboarding if authenticated but not onboarded
   useEffect(() => {
@@ -173,37 +189,24 @@ function RouteComponent() {
     setIsDirty(dirty)
   }
 
+  // Handle plain text changes from editor
+  const handlePlainTextChange = (plainText: string) => {
+    setPlainTextContent(plainText)
+  }
+
+  // Handle prompt selection - insert into editor
+  const handlePromptSelect = (promptText: string) => {
+    entryFormRef.current?.insertText(promptText)
+  }
+
   // Handle June Bug click
   const handleJuneBugClick = () => {
-    // Toggle sidebar
-    if (rightSidebarCollapsed) {
-      // Opening sidebar - reset to category selection
-      setSelectedCategory(null)
-    }
     toggleRightSidebar()
   }
 
   // Handle animation completion
   const handleAnimationComplete = () => {
     setShowJuneBugAnimation(false)
-  }
-
-  // Handle category selection in sidebar
-  const handleCategorySelect = (category: PromptCategory) => {
-    setSelectedCategory(category)
-  }
-
-  // Handle back to category selection
-  const handleBackToCategories = () => {
-    setSelectedCategory(null)
-  }
-
-  // Handle closing prompts sidebar
-  const handleClosePrompts = () => {
-    setSelectedCategory(null)
-    if (!rightSidebarCollapsed) {
-      toggleRightSidebar()
-    }
   }
 
   // Protect against browser navigation (closing tab/window with unsaved changes)
@@ -347,11 +350,13 @@ function RouteComponent() {
             )}
             {!isLoading && currentEntry && (
               <EntryForm
+                ref={entryFormRef}
                 entryId={currentEntry._id}
                 initialTitle="Untitled"
                 initialContent={currentEntry.content}
                 entryDate={currentEntry.entryDate}
                 onDirtyChange={handleDirtyChange}
+                onPlainTextChange={handlePlainTextChange}
                 isAuthenticated={isAuthenticated}
                 rightSidebarCollapsed={rightSidebarCollapsed}
               />
@@ -367,14 +372,17 @@ function RouteComponent() {
         </div>
       </main>
 
-      {/* Right Sidebar - Prompts */}
-      <PromptsSidebar
-        isCollapsed={rightSidebarCollapsed}
-        selectedCategory={selectedCategory}
-        onCategorySelect={handleCategorySelect}
-        onBack={handleBackToCategories}
-        onClose={handleClosePrompts}
-      />
+      {/* Right Sidebar - AI Prompts */}
+      {isAuthenticated && context.userId && !rightSidebarCollapsed && (
+        <div className="w-80 bg-card border-l flex-shrink-0 overflow-hidden">
+          <PromptsSection
+            userId={context.userId as Id<'users'>}
+            onPromptSelect={handlePromptSelect}
+            activePromptType={activePromptType}
+            onActivePromptTypeChange={setActivePromptType}
+          />
+        </div>
+      )}
 
       {/* Search Command Menu */}
       <SearchCommandMenu

@@ -112,4 +112,38 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index('userId', ['userId']),
+
+  // AI Writing Prompts
+  prompts: defineTable({
+    userId: v.id('users'),
+    promptType: v.union(
+      v.literal('reflection'),
+      v.literal('skill-development'),
+      v.literal('career-growth'),
+      v.literal('daily-checkin')
+    ),
+    promptCategory: v.union(
+      v.literal('static'),
+      v.literal('history-based'),
+      v.literal('context-aware')
+    ),
+    promptText: v.string(),
+    promptMetadata: v.optional(v.object({
+      model: v.string(), // 'gpt-4o', 'gpt-4o-mini', or 'template'
+      tokensUsed: v.number(),
+      generatedAt: v.number(),
+      version: v.number() // For tracking prompt iterations
+    })),
+    // Usage tracking
+    timesShown: v.number(),
+    timesUsed: v.number(),
+    lastShownAt: v.optional(v.number()),
+    // State
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number()
+  })
+    .index('by_user', ['userId'])
+    .index('by_user_type', ['userId', 'promptType', 'isActive'])
+    .index('by_user_category', ['userId', 'promptCategory']),
 })
